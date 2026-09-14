@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// PERFIL
+// ─────────────────────────────────────────────
+
+model Profile {
+  id              String            @id @default(cuid())
+  name            String
+  level           Int               @default(1)
+  xp              Int               @default(0)
+  characterSpriteUrl String?
+  favoritePokemon FavoritePokemon[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model FavoritePokemon {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  pokemonId Int      // id da PokeAPI
+  slot      Int      // posição 1-6 no grid de favoritos
+  createdAt DateTime @default(now())
+
+  @@unique([profileId, slot])
+  @@index([profileId]) // CORREÇÃO: índice na FK para evitar full scan
+}
+
+// ─────────────────────────────────────────────
+// JOGOS E HACK ROOMS
+// ─────────────────────────────────────────────
+
+model Game {
+  id                 String         @id @default(cuid())
+  name               String
+  type               GameType
+  themeColor         String
+  bannerUrl          String?
+  isCurrentlyPlaying Boolean        @default(false)
+  spriteKey          String?
+  pokedexId          Int?
+  completionBonusAwarded Boolean     @default(false)
+  createdAt          DateTime       @default(now())
+
+  hackRoom     HackRoom?
+  ownedPokemon OwnedPokemon[]
+  trainerCard  TrainerCard?
+}
+
+enum GameType {
+  FRANCHISE
+  HACK_ROM
+}
+
+model HackRoom {
+  id           String         @id @default(cuid())
+  gameId       String         @unique
+  game         Game           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  description  String?
+  customSprites CustomSprite[]
+  createdAt    DateTime       @default(now())
+}
+
+model CustomSprite {
+  id         String   @id @default(cuid())
+  hackRoomId String
+  hackRoom   HackRoom @relation(fields: [hackRoomId], references: [id], onDelete: Cascade)
+  pokemonId  Int      // referência ao id da PokeAPI que esse sprite substitui/representa
+  imageUrl   String   // URL no bucket, nunca base64 no banco
+  createdAt  DateTime @default(now())
+
+  @@unique([hackRoomId, pokemonId]) // CORREÇÃO: evita sprite duplicado para o mesmo pokémon
+  @@index([hackRoomId])             // CORREÇÃO: índice na FK
+}
+
+// ─────────────────────────────────────────────
+// POKÉMONS POSSUÍDOS
+// ─────────────────────────────────────────────
+
+model OwnedPokemon {
+  id            String   @id @default(cuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  pokemonId     Int      // id da PokeAPI
+  nickname      String?
+  level         Int
+  isShiny       Boolean  @default(false)
+  boxNumber     Int      @default(1)
+  boxSlot       Int      // posição dentro da box
+  moveset       Json?    // array de até 4 moves, salvos como string[]
+  spriteVariant String?  // "dream-world" | "official-artwork" | null
+  createdAt     DateTime @default(now())
+
+  @@unique([gameId, boxNumber, boxSlot])
+  @@index([gameId])   // CORREÇÃO: índice na FK
+  @@index([pokemonId]) // CORREÇÃO: útil para agregações por pokémon
+}
+
+// ─────────────────────────────────────────────
+// TRAINER CARD
+// ─────────────────────────────────────────────
+
+model TrainerCard {
+  id                  String                @id @default(cuid())
+  gameId              String                @unique
+  game                Game                  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  trainerName         String
+  characterSpriteUrl  String?
+  badges              Badge[]
+  showcasePokemon     TrainerCardPokemon[]
+  createdAt           DateTime              @default(now())
+}
+
+model Badge {
+  id            String      @id @default(cuid())
+  trainerCardId String
+  trainerCard   TrainerCard @relation(fields: [trainerCardId], references: [id], onDelete: Cascade)
+  name          String
+  iconUrl       String?
+  earnedAt      DateTime?   // null = ainda não conquistada
+  xpAwarded     Boolean     @default(false)
+
+  @@index([trainerCardId]) // CORREÇÃO: índice na FK
+}
+
+model TrainerCardPokemon {
+  id            String      @id @default(cuid())
+  trainerCardId String
+  trainerCard   TrainerCard @relation(fields: [trainerCardId], references: [id], onDelete: Cascade)
+  pokemonId     Int
+  nickname      String?
+  slot          Int         // 1-6, posição no time
+  moveset       Json?
+
+  @@unique([trainerCardId, slot])
+  @@index([trainerCardId]) // CORREÇÃO: índice na FK
+}
