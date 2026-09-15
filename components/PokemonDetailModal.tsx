@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getPokemon } from '@/lib/pokeapi/client';
 import type { PokemonDetail } from '@/lib/pokeapi/types';
@@ -13,27 +13,76 @@ import {
 } from '@/lib/actions/pokemon-home';
 import type { PokemonGridEntry, PokemonGameOption } from './PokemonGrid';
 
-interface Props {
+export interface EntryPokemonDetailModalProps {
   entry: PokemonGridEntry;
-  games: PokemonGameOption[];
+  games?: PokemonGameOption[];
   onClose: () => void;
 }
 
+export interface LegacyPokemonDetailModalProps {
+  pokemonId: number;
+  nickname?: string | null;
+  level?: number;
+  moveset?: unknown;
+  isShiny?: boolean;
+  id?: string;
+  gameId?: string;
+  boxNumber?: number;
+  boxSlot?: number;
+  games?: PokemonGameOption[];
+  onClose: () => void;
+}
+
+export type PokemonDetailModalProps = EntryPokemonDetailModalProps | LegacyPokemonDetailModalProps;
+
 type Tab = 'view' | 'edit' | 'transfer';
 
-export default function PokemonDetailModal({ entry, games, onClose }: Props) {
+export default function PokemonDetailModal(props: PokemonDetailModalProps) {
+  const { onClose, games = [] } = props;
+
+  const initialEntry: PokemonGridEntry = useMemo(() => {
+    if ('entry' in props && props.entry) {
+      return props.entry;
+    }
+    const legacy = props as LegacyPokemonDetailModalProps;
+    return {
+      id: legacy.id ?? '',
+      gameId: legacy.gameId ?? '',
+      boxNumber: legacy.boxNumber ?? 1,
+      boxSlot: legacy.boxSlot ?? 1,
+      pokemonId: legacy.pokemonId,
+      nickname: legacy.nickname ?? null,
+      name: legacy.nickname ?? `#${legacy.pokemonId}`,
+      level: legacy.level ?? 1,
+      moveset: legacy.moveset ?? null,
+      isShiny: legacy.isShiny ?? false,
+      typeNames: [],
+      typeName: '',
+      typeColor: '#22D3EE',
+      spriteUrl: null,
+      spriteVariant: null,
+    };
+  }, [props]);
+
   const [tab, setTab] = useState<Tab>('view');
   const [detail, setDetail] = useState<PokemonDetail | null>(null);
   const [imgFailed, setImgFailed] = useState(false);
 
   // Local mirror of the entry so the modal reflects edits/transfers immediately
   // while the server action revalidates the page in the background.
-  const [current, setCurrent] = useState(entry);
+  const [current, setCurrent] = useState<PokemonGridEntry>(initialEntry);
+
+  useEffect(() => {
+    setCurrent(initialEntry);
+    setNickname(initialEntry.nickname ?? '');
+    setLevel(initialEntry.level);
+    setIsShiny(initialEntry.isShiny);
+  }, [initialEntry]);
 
   // --- Edit tab state ---
-  const [nickname, setNickname] = useState(entry.nickname ?? '');
-  const [level, setLevel] = useState(entry.level);
-  const [isShiny, setIsShiny] = useState(entry.isShiny);
+  const [nickname, setNickname] = useState(initialEntry.nickname ?? '');
+  const [level, setLevel] = useState(initialEntry.level);
+  const [isShiny, setIsShiny] = useState(initialEntry.isShiny);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -69,6 +118,10 @@ export default function PokemonDetailModal({ entry, games, onClose }: Props) {
     games.find((g) => g.id === current.gameId)?.name ?? current.gameId;
 
   async function handleSave() {
+    if (!current.id) {
+      setEditError('Não é possível salvar alterações para este Pokémon.');
+      return;
+    }
     setSaving(true);
     setEditError(null);
     setEditSuccess(false);
@@ -94,6 +147,7 @@ export default function PokemonDetailModal({ entry, games, onClose }: Props) {
   }
 
   async function handleDelete() {
+    if (!current.id) return;
     if (!confirmDelete) {
       setConfirmDelete(true);
       return;
@@ -110,7 +164,7 @@ export default function PokemonDetailModal({ entry, games, onClose }: Props) {
   }
 
   async function handleTransfer() {
-    if (!targetGameId) return;
+    if (!current.id || !targetGameId) return;
     setTransferring(true);
     setTransferError(null);
     setTransferSuccess(null);
@@ -201,6 +255,18 @@ export default function PokemonDetailModal({ entry, games, onClose }: Props) {
                 <InfoRow label="Shiny" value={current.isShiny ? 'Sim ✦' : 'Não'} />
                 <InfoRow label="Jogo" value={currentGameName} />
                 <InfoRow label="Box / Slot" value={`Box ${current.boxNumber} • Slot ${current.boxSlot}`} />
+                {Array.isArray(current.moveset) && (current.moveset as string[]).length > 0 && (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Moveset</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(current.moveset as string[]).map((move, i) => (
+                        <span key={i} className="rounded-md bg-white/10 px-2 py-0.5 text-xs capitalize text-slate-200">
+                          {move}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

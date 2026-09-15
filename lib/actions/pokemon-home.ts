@@ -68,6 +68,7 @@ export async function addPokemonHomeAction(input: AddPokemonInput) {
   }
 
   revalidatePath('/pokemons');
+  revalidatePath(`/pokemons/${gameId}`);
   revalidatePath(`/jogos/${gameId}/living-dex`);
 
   return { ok: true, pokemon: created };
@@ -118,6 +119,7 @@ export async function updatePokemonHomeAction(id: string, input: UpdatePokemonIn
   });
 
   revalidatePath('/pokemons');
+  revalidatePath(`/pokemons/${existing.gameId}`);
   revalidatePath(`/jogos/${existing.gameId}/living-dex`);
 
   return { ok: true, pokemon: updated };
@@ -137,6 +139,7 @@ export async function deletePokemonHomeAction(id: string) {
   });
 
   revalidatePath('/pokemons');
+  revalidatePath(`/pokemons/${existing.gameId}`);
   revalidatePath(`/jogos/${existing.gameId}/living-dex`);
 
   return { ok: true };
@@ -192,6 +195,8 @@ export async function transferPokemonGameAction(input: TransferPokemonInput) {
   });
 
   revalidatePath('/pokemons');
+  revalidatePath(`/pokemons/${previousGameId}`);
+  revalidatePath(`/pokemons/${targetGameId}`);
   revalidatePath(`/jogos/${previousGameId}/living-dex`);
   revalidatePath(`/jogos/${targetGameId}/living-dex`);
 

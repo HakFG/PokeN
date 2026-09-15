@@ -74,11 +74,24 @@ export default function PokemonBox({ game, dexTotal }: Props) {
 
       {selected && (
         <PokemonDetailModal
-          pokemonId={selected.pokemonId}
-          nickname={selected.nickname}
-          level={selected.level}
-          moveset={selected.moveset}
-          isShiny={selected.isShiny}
+          entry={{
+            id: selected.id,
+            gameId: game.id,
+            boxNumber: selected.boxNumber,
+            boxSlot: selected.boxSlot,
+            pokemonId: selected.pokemonId,
+            nickname: selected.nickname,
+            name: selected.nickname ?? `#${selected.pokemonId}`,
+            level: selected.level,
+            moveset: selected.moveset,
+            isShiny: selected.isShiny,
+            typeNames: [],
+            typeName: '',
+            typeColor: selected.typeColor,
+            spriteUrl: null,
+            spriteVariant: null,
+          }}
+          games={[{ id: game.id, name: game.name, type: 'FRANCHISE' }]}
           onClose={() => setSelected(null)}
         />
       )}
