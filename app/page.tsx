@@ -17,7 +17,9 @@ export default async function HomePage() {
   const [profile, playingGames, completedGames, uniqueDex] = await Promise.all([
     getOrCreateProfile(),
     prisma.game.findMany({
-      where: { isCurrentlyPlaying: true },
+      where: {
+        OR: [{ isCurrentlyPlaying: true }, { status: 'IN_PROGRESS' }],
+      },
       orderBy: { createdAt: 'asc' },
       select: { id: true, name: true, themeColor: true, bannerUrl: true, isCurrentlyPlaying: true, status: true },
     }),

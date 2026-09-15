@@ -101,7 +101,7 @@ export default function EditPokemonModal({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
         onClick={onClose}
-        className="add-pokemon-backdrop"
+        style={{ zIndex: 9999 }} className="add-pokemon-backdrop"
       >
         <motion.div
           key="modal"

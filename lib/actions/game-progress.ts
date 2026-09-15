@@ -30,5 +30,6 @@ export async function updateGameProgress(
   });
   revalidatePath('/jogos');
   revalidatePath(`/jogos/${gameId}/trainer-card`);
+  revalidatePath('/');
   return { ok: true as const };
 }

@@ -72,6 +72,11 @@ export default function EditModal({
   const { showFeedback } = useXpFeedback();
   const [tab, setTab] = useState<Tab>('trainer');
   const [saving, setSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Treinador
   const [name, setName] = useState(initialName);
@@ -183,14 +188,16 @@ export default function EditModal({
     reader.readAsDataURL(file);
   }
 
-return (
+if (!mounted) return null;
+
+  const modalContent = (
   <AnimatePresence>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-3 backdrop-blur-md md:p-6"
+      style={{ zIndex: 9999 }} className="fixed inset-0 flex items-center justify-center bg-black/90 p-3 backdrop-blur-md md:p-6"
     >
       <motion.div
         initial={{ scale: 0.92, opacity: 0, y: 20 }}
@@ -593,6 +600,8 @@ return (
       </motion.div>
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 }
 
 /* ---------- Tile de sprite do treinador, com fallback ---------- */

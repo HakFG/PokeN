@@ -204,21 +204,44 @@ function SingleCarousel({ games, label, emptyMsg, autoDelay = 4200 }: CarouselPr
                   </svg>
                 </button>
 
-                {/* Dots */}
-                <div className="absolute bottom-2 left-1/2 z-30 flex -translate-x-1/2 gap-1">
-                  {games.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setDir(i > index ? 1 : -1);
-                        setIndex(i);
-                      }}
-                      aria-label={`Slide ${i + 1}`}
-                      className={`rounded-full transition-all duration-250 ${
-                        i === index ? 'w-4 h-1 bg-white' : 'w-1 h-1 bg-white/30'
-                      }`}
-                    />
-                  ))}
+                {/* Dots compactos (máx 5) */}
+                <div className="absolute bottom-2 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/50 px-2 py-1 backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
+                  {(() => {
+                    const maxDots = 5;
+                    let start = 0;
+                    if (games.length > maxDots) {
+                      start = Math.max(0, Math.min(index - Math.floor(maxDots / 2), games.length - maxDots));
+                    }
+                    const visibleDots = Array.from(
+                      { length: Math.min(maxDots, games.length) },
+                      (_, idx) => start + idx,
+                    );
+
+                    return visibleDots.map((i, dotPos) => {
+                      const isCurrent = i === index;
+                      const isEdgeLeft = dotPos === 0 && i > 0;
+                      const isEdgeRight = dotPos === visibleDots.length - 1 && i < games.length - 1;
+                      const isEdge = isEdgeLeft || isEdgeRight;
+
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setDir(i > index ? 1 : -1);
+                            setIndex(i);
+                          }}
+                          aria-label={`Slide ${i + 1}`}
+                          className={`rounded-full transition-all duration-300 ${
+                            isCurrent
+                              ? 'h-1.5 w-3.5 bg-white shadow-[0_0_6px_rgba(255,255,255,0.8)]'
+                              : isEdge
+                                ? 'h-1 w-1 bg-white/25 scale-75'
+                                : 'h-1.5 w-1.5 bg-white/40 hover:bg-white/70'
+                          }`}
+                        />
+                      );
+                    });
+                  })()}
                 </div>
               </>
             )}
@@ -240,7 +263,7 @@ export default function HomeGameCarousel({ playing, completed }: Props) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.75, delay: 1.25, ease: [0.16, 1, 0.3, 1] }}
-      className="group flex w-full max-w-[70%] gap-3"
+      className="group flex w-full max-w-[60%] gap-3"
     >
       <SingleCarousel
         games={playing}

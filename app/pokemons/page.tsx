@@ -9,10 +9,16 @@ import { getTypeColor } from '@/lib/pokemon-types';
 import PokemonAtmosphere from '@/components/Pokemons/PokemonAtmosphere';
 
 export default async function PokemonsPage() {
-  const owned = await prisma.ownedPokemon.findMany({
-    // Número nacional primeiro; duplicatas da mesma espécie ficam lado a lado.
-    orderBy: [{ pokemonId: 'asc' }, { createdAt: 'asc' }],
-  });
+  const [owned, games] = await Promise.all([
+    prisma.ownedPokemon.findMany({
+      // Número nacional primeiro; duplicatas da mesma espécie ficam lado a lado.
+      orderBy: [{ pokemonId: 'asc' }, { createdAt: 'asc' }],
+    }),
+    prisma.game.findMany({
+      select: { id: true, name: true, type: true },
+      orderBy: { createdAt: 'asc' },
+    }),
+  ]);
 
   // Resolve apenas sprites customizados de hack room
   const spriteMap = await resolveSpritesBatch(
@@ -24,6 +30,9 @@ export default async function PokemonsPage() {
       const detail = await getPokemonServer(p.pokemonId).catch(() => null);
       return {
         id: p.id,
+        gameId: p.gameId,
+        boxNumber: p.boxNumber,
+        boxSlot: p.boxSlot,
         pokemonId: p.pokemonId,
         nickname: p.nickname,
         name: detail?.name ?? `#${p.pokemonId}`,
@@ -46,7 +55,7 @@ export default async function PokemonsPage() {
       <div className="pokemon-header-line" aria-hidden="true" />
       <main className="relative z-10 flex-1 pb-16">
         <PokemonHomeBanner count={entries.length} />
-        <PokemonGrid entries={entries} />
+        <PokemonGrid entries={entries} games={games} />
       </main>
     </div>
   );
