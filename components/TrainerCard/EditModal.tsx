@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TRAINER_PRESETS } from '@/lib/presets/trainers';
 import {
@@ -163,16 +164,23 @@ export default function EditModal({
     );
   }
 
-  async function handleSpriteUpload(file: File | undefined) {
+  function handleSpriteUpload(file: File | undefined) {
     if (!file) return;
-    setSpriteStatus(null);
-    try {
-      const result = await uploadTrainerSprite(trainerCardId, file);
-      setSpriteUrl(result.spriteUrl);
-      setSpriteStatus('Sprite enviado e selecionado.');
-    } catch (error) {
-      setSpriteStatus(error instanceof Error ? error.message : 'Não foi possível enviar o sprite');
+    if (file.size > 2 * 1024 * 1024) {
+      setSpriteStatus('A imagem deve ter no máximo 2MB.');
+      return;
     }
+    setSpriteStatus('Carregando imagem...');
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setSpriteUrl(base64);
+      setSpriteStatus('Sprite carregado! Clique em Salvar para confirmar.');
+    };
+    reader.onerror = () => {
+      setSpriteStatus('Erro ao ler a imagem.');
+    };
+    reader.readAsDataURL(file);
   }
 
 return (
@@ -315,11 +323,44 @@ return (
                     <p className="mb-3 text-xs text-white/55">Escolha um protagonista e envie seu PNG, WEBP ou GIF. A imagem fica salva como URL na sua Trainer Card.</p>
                     <input ref={spriteInputRef} type="file" accept="image/png,image/webp,image/gif,image/jpeg" className="sr-only" onChange={(event) => void handleSpriteUpload(event.target.files?.[0])} />
                     <div className="mb-3 flex flex-wrap items-center gap-2">
-                      <button type="button" onClick={() => spriteInputRef.current?.click()} className="rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-3 py-2 font-display text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-300/20">Enviar sprite próprio</button>
-                      {spriteUrl && <button type="button" onClick={() => { setSpriteUrl(null); setSelectedTrainer(null); setSpriteStatus('Sprite removido. Salve para confirmar.'); }} className="rounded-xl border border-red-300/25 px-3 py-2 font-display text-[10px] font-bold uppercase tracking-[0.14em] text-red-200 hover:bg-red-400/10">Remover seleção</button>}
+                      <button type="button" onClick={() => spriteInputRef.current?.click()} className="rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-3 py-2 font-display text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-300/20">Enviar sprite do computador</button>
+                      {spriteUrl && <button type="button" onClick={() => { setSpriteUrl(null); setSelectedTrainer(null); setSpriteStatus('Sprite removido. Salve para confirmar.'); }} className="rounded-xl border border-red-300/25 px-3 py-2 font-display text-[10px] font-bold uppercase tracking-[0.14em] text-red-200 hover:bg-red-400/10">Remover sprite</button>}
                       {spriteStatus && <span className="text-xs text-cyan-100">{spriteStatus}</span>}
                     </div>
-                    {spriteUrl && <div className="mb-3 flex items-center gap-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[.04] p-2"><img src={spriteUrl} alt="Prévia do sprite selecionado" className="h-14 w-14 object-contain [image-rendering:pixelated]" /><span className="text-xs text-cyan-100/80">Sprite atual da Trainer Card</span></div>}
+
+                    <div className="mb-3">
+                      <label className="mb-1 block font-display text-[9px] font-bold uppercase tracking-[0.16em] text-cyan-200/80">
+                        Ou cole o link direto da imagem (URL da web / PNG / GIF / WEBP):
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://exemplo.com/sprite.png ou /images/..."
+                        value={spriteUrl && !spriteUrl.startsWith('data:') ? spriteUrl : ''}
+                        onChange={(e) => {
+                          const val = e.target.value.trim();
+                          setSpriteUrl(val || null);
+                          setSpriteStatus(val ? 'Link inserido! Salve para confirmar.' : null);
+                        }}
+                        className="w-full rounded-xl border border-white/12 bg-slate-900/70 px-3 py-2 text-xs text-white placeholder:text-white/30 focus:border-cyan-300/60 focus:outline-none focus:ring-2 focus:ring-cyan-300/20"
+                      />
+                    </div>
+
+                    {spriteUrl && (
+                      <div className="mb-3 flex items-center gap-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[.04] p-2">
+                        <img
+                          src={spriteUrl}
+                          alt="Prévia do sprite"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.opacity = '0.3';
+                          }}
+                          className="h-14 w-14 object-contain [image-rendering:pixelated]"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-cyan-100/90">Prévia do sprite</span>
+                          <span className="text-[10px] text-white/50">Clique em Salvar no rodapé para gravar as alterações</span>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                       {TRAINER_PRESETS.map((p) => (
                         <SpriteTile

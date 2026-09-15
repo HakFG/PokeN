@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 interface Props {
   spriteUrl: string | null;
   trainerName: string;
@@ -5,6 +9,10 @@ interface Props {
 }
 
 export default function TrainerSprite({ spriteUrl, trainerName, themeColor }: Props) {
+  const [hasError, setHasError] = useState(false);
+
+  const showImage = Boolean(spriteUrl && !hasError);
+
   return (
     <div
       className="trainer-sprite-panel relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-white/15 p-2 shadow-[0_16px_40px_rgba(0,0,0,.5)] md:p-3"
@@ -23,13 +31,14 @@ export default function TrainerSprite({ spriteUrl, trainerName, themeColor }: Pr
 
       {/* Frame circular com sprite */}
       <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center">
-        {spriteUrl ? (
+        {showImage ? (
           <>
             {/* Halo atrás do sprite */}
             <div className="trainer-sprite-halo absolute inset-0 m-auto" aria-hidden="true" />
             <img
-              src={spriteUrl}
+              src={spriteUrl!}
               alt={trainerName}
+              onError={() => setHasError(true)}
               className="relative z-10 max-h-full w-auto object-contain [image-rendering:pixelated] drop-shadow-[0_14px_26px_rgba(0,0,0,.6)]"
               draggable={false}
             />

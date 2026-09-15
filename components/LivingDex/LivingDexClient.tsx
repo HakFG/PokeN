@@ -12,7 +12,7 @@ import { useState } from 'react';
 import PokedexPanel from './PokedexPanel';
 import BoxPanel from './BoxPanel';
 import AddPokemonModal from './AddPokemonModal';
-import { deleteOwnedPokemon } from '@/lib/actions/living-dex';
+import EditPokemonModal from './EditPokemonModal';
 import type { PokedexSpecies } from '@/lib/pokeapi/server-pokedex';
 import { getOfficialArtwork } from '@/lib/pokeapi/sprite-variants';
 
@@ -56,7 +56,7 @@ export default function LivingDexClient({
     slot: number;
     species: PokedexSpecies | null;
   } | null>(null);
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [editingPokemon, setEditingPokemon] = useState<Owned | null>(null);
   const [dragging, setDragging] = useState<PokedexSpecies | null>(null);
   const ownedSet = new Set(ownedIds);
 
@@ -122,7 +122,10 @@ export default function LivingDexClient({
           <BoxPanel
             owned={owned}
             onEmptyClick={(box, slot) => setAddTarget({ box, slot, species: null })}
-            onFilledClick={(id) => setDetailId(id)}
+            onFilledClick={(id) => {
+              const found = owned.find((pokemon) => pokemon.id === id);
+              if (found) setEditingPokemon(found);
+            }}
           />
         </motion.section>
       </div>
@@ -141,6 +144,7 @@ export default function LivingDexClient({
         )}
       </DragOverlay>
 
+      {/* Modal para adicionar novo Pokémon */}
       {addTarget && (
         <AddPokemonModal
           gameId={gameId}
@@ -155,11 +159,13 @@ export default function LivingDexClient({
         />
       )}
 
-      {detailId && (
-        <DetailPopup
+      {/* Modal para editar Pokémon existente */}
+      {editingPokemon && (
+        <EditPokemonModal
           gameId={gameId}
-          owned={owned.find((pokemon) => pokemon.id === detailId)!}
-          onClose={() => setDetailId(null)}
+          owned={editingPokemon}
+          onClose={() => setEditingPokemon(null)}
+          onSaved={() => router.refresh()}
           onDeleted={() => router.refresh()}
         />
       )}
@@ -178,61 +184,4 @@ function findFirstEmptySlot(owned: Owned[]) {
     }
   }
   return { box: maxBox + 1, slot: 1 };
-}
-
-function DetailPopup({
-  gameId,
-  owned,
-  onClose,
-  onDeleted,
-}: {
-  gameId: string;
-  owned: Owned;
-  onClose: () => void;
-  onDeleted: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
-      onClick={onClose}
-    >
-      <div
-        className="livingdex-detail-popup"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="livingdex-detail-popup-header">
-          <div>
-            <h3 className="livingdex-detail-popup-title">{owned.name}</h3>
-            {owned.nickname && owned.nickname.toLocaleLowerCase() !== owned.name.toLocaleLowerCase() && (
-              <p className="livingdex-detail-popup-nickname">Apelido: {owned.nickname}</p>
-            )}
-          </div>
-          <span className="livingdex-detail-popup-level">Lv {owned.level}</span>
-        </div>
-        <p className="livingdex-detail-popup-slot">
-          Box {owned.boxNumber} · Slot {owned.boxSlot}
-        </p>
-        <div className="livingdex-detail-popup-actions">
-          <button
-            type="button"
-            onClick={onClose}
-            className="livingdex-detail-btn livingdex-detail-btn-ghost"
-          >
-            Fechar
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              await deleteOwnedPokemon(owned.id, gameId);
-              onClose();
-              onDeleted();
-            }}
-            className="livingdex-detail-btn livingdex-detail-btn-danger"
-          >
-            Remover
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }

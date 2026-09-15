@@ -1,6 +1,5 @@
 'use server';
 
-import { put } from '@vercel/blob';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { grantXp, mergeXpResults } from '@/lib/xp';
@@ -174,25 +173,23 @@ export async function toggleBadgeEarned(badgeId: string, earned: boolean) {
   return { ok: true as const, xp };
 }
 
-/** Envia um sprite personalizado e o associa à Trainer Card atual. */
-export async function uploadTrainerSprite(trainerCardId: string, file: File) {
-  if (!(file instanceof File) || file.size === 0 || !file.type.startsWith('image/')) {
+/** Salva um sprite personalizado (base64 ou URL) na Trainer Card atual. */
+export async function uploadTrainerSprite(trainerCardId: string, spriteData: string) {
+  if (!spriteData) {
     throw new Error('Envie uma imagem válida para o sprite');
   }
-  if (file.size > 5 * 1024 * 1024) throw new Error('O sprite deve ter no máximo 5 MB');
 
   const card = await prisma.trainerCard.findUnique({
-    where: { id: trainerCardId }, select: { gameId: true },
+    where: { id: trainerCardId },
+    select: { gameId: true },
   });
   if (!card) throw new Error('Trainer Card não encontrada');
 
-  const extension = file.name.split('.').pop() || 'png';
-  const blob = await put(`trainer-cards/${card.gameId}/trainer-${crypto.randomUUID()}.${extension}`, file, {
-    access: 'public', token: process.env.BLOB_READ_WRITE_TOKEN,
-  });
   await prisma.trainerCard.update({
-    where: { id: trainerCardId }, data: { characterSpriteUrl: blob.url },
+    where: { id: trainerCardId },
+    data: { characterSpriteUrl: spriteData },
   });
+
   revalidatePath(`/jogos/${card.gameId}/trainer-card`);
-  return { ok: true as const, spriteUrl: blob.url };
+  return { ok: true as const, spriteUrl: spriteData };
 }

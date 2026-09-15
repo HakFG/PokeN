@@ -152,3 +152,43 @@ export async function deleteOwnedPokemon(id: string, gameId: string) {
   await prisma.ownedPokemon.delete({ where: { id } });
   revalidatePath(`/jogos/${gameId}/living-dex`);
 }
+
+export async function updateOwnedPokemon(
+  id: string,
+  gameId: string,
+  data: {
+    nickname?: string | null;
+    level?: number;
+    isShiny?: boolean;
+  },
+) {
+  if (!id || !gameId) throw new Error('Dados incompletos');
+
+  const updateData: {
+    nickname?: string | null;
+    level?: number;
+    isShiny?: boolean;
+    spriteVariant?: string;
+  } = {};
+
+  if (data.nickname !== undefined) {
+    updateData.nickname = data.nickname?.trim() || null;
+  }
+  if (data.level !== undefined) {
+    updateData.level = Math.min(100, Math.max(1, Math.round(Number(data.level))));
+  }
+  if (data.isShiny !== undefined) {
+    updateData.isShiny = Boolean(data.isShiny);
+    if (updateData.isShiny) {
+      updateData.spriteVariant = 'official-artwork';
+    }
+  }
+
+  await prisma.ownedPokemon.update({
+    where: { id },
+    data: updateData,
+  });
+
+  revalidatePath(`/jogos/${gameId}/living-dex`);
+  return { ok: true as const };
+}
