@@ -7,6 +7,7 @@ interface Props {
   trainerCardId: string;
   trainerName: string;
   characterSpriteUrl: string | null;
+  playtime: string | null;
   showcase: {
     slot: number;
     pokemonId: number;
@@ -25,6 +26,7 @@ export default function EditButton({
   trainerCardId,
   trainerName,
   characterSpriteUrl,
+  playtime,
   showcase,
   badges,
 }: Props) {
@@ -64,6 +66,7 @@ export default function EditButton({
           trainerCardId={trainerCardId}
           initialName={trainerName}
           initialSpriteUrl={characterSpriteUrl}
+          initialPlaytime={playtime}
           initialShowcase={showcase}
           initialBadges={badges}
           onClose={() => setOpen(false)}

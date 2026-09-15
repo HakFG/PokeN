@@ -10,10 +10,11 @@ interface Props {
   themeColor: string;
   isCurrentlyPlaying: boolean;
   bannerUrl: string | null;
+  status?: 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED';
   index: number;
 }
 
-export default function GameCard({ gameId, name, themeColor, isCurrentlyPlaying, bannerUrl, index }: Props) {
+export default function GameCard({ gameId, name, themeColor, isCurrentlyPlaying, bannerUrl, status, index }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
   const reduceMotion = useReducedMotion();
 
@@ -59,6 +60,7 @@ export default function GameCard({ gameId, name, themeColor, isCurrentlyPlaying,
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             >Jogando</motion.div>
           )}
+          {status && <span className={`absolute left-3 top-3 z-30 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider ${status === 'COMPLETED' ? 'bg-emerald-300 text-emerald-950' : status === 'DROPPED' ? 'bg-red-300 text-red-950' : 'bg-cyan-300 text-cyan-950'}`}>{status === 'COMPLETED' ? 'Concluído' : status === 'DROPPED' ? 'Pausado' : 'Em andamento'}</span>}
           <div className="absolute bottom-0 left-0 right-0 z-20 p-3">
             <h3 className="font-display text-center text-sm font-black uppercase leading-tight tracking-wide text-white drop-shadow-md md:text-base">{name}</h3>
             <div className="mt-2 h-[3px] w-full rounded-full" style={{ background: `linear-gradient(90deg, transparent, ${themeColor}, transparent)` }} />

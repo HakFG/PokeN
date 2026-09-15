@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { getPokemonList } from '@/lib/pokeapi/client';
 import { createOwnedPokemon } from '@/lib/actions/living-dex';
+import { useXpFeedback } from '@/components/Xp/XpFeedbackProvider';
 import type { PokedexSpecies } from '@/lib/pokeapi/server-pokedex';
 import { getOfficialArtwork } from '@/lib/pokeapi/sprite-variants';
 
@@ -14,6 +15,7 @@ interface Props {
   boxSlot: number;
   isHackRoom: boolean;
   initialSpecies: PokedexSpecies | null;
+  fakeSpecies?: { id: string; name: string; spriteUrl: string | null }[];
   onClose: () => void;
   onSaved?: () => void;
 }
@@ -21,6 +23,8 @@ interface Props {
 interface SpeciesLite {
   id: number;
   name: string;
+  fakeSpeciesId?: string;
+  spriteUrl?: string | null;
 }
 
 export default function AddPokemonModal({
@@ -29,9 +33,11 @@ export default function AddPokemonModal({
   boxSlot,
   isHackRoom,
   initialSpecies,
+  fakeSpecies = [],
   onClose,
   onSaved,
 }: Props) {
+  const { showFeedback } = useXpFeedback();
   const reduceMotion = useReducedMotion();
   const [allSpecies, setAllSpecies] = useState<SpeciesLite[]>([]);
   const [query, setQuery] = useState(initialSpecies?.name ?? '');
@@ -101,8 +107,10 @@ export default function AddPokemonModal({
   const filtered = useMemo(() => {
     if (query.trim().length < 2 || selected) return [];
     const q = query.toLowerCase().trim();
-    return allSpecies.filter((s) => s.name.includes(q)).slice(0, 12);
-  }, [allSpecies, query, selected]);
+    const native = allSpecies.filter((s) => s.name.includes(q));
+    const fakes = isHackRoom ? fakeSpecies.filter((s) => s.name.toLowerCase().includes(q)).map((s) => ({ id: 0, name: s.name, fakeSpeciesId: s.id, spriteUrl: s.spriteUrl })) : [];
+    return [...fakes, ...native].slice(0, 12);
+  }, [allSpecies, query, selected, fakeSpecies, isHackRoom]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -114,11 +122,15 @@ export default function AddPokemonModal({
     setError(null);
     const formData = new FormData(e.currentTarget);
     formData.set('pokemonId', String(selected.id));
+    if (selected.fakeSpeciesId) formData.set('fakeSpeciesId', selected.fakeSpeciesId);
     formData.set('gameId', gameId);
     formData.set('boxNumber', String(boxNumber));
     formData.set('boxSlot', String(boxSlot));
     try {
-      await createOwnedPokemon(formData);
+      const result = await createOwnedPokemon(formData);
+      if (result.ok && result.xp) {
+        showFeedback(result.xp, `${selected.name} adicionado`);
+      }
       onSaved?.();
       onClose();
     } catch (err) {
@@ -127,7 +139,7 @@ export default function AddPokemonModal({
     }
   }
 
-  const artwork = selected ? getOfficialArtwork(selected.id, isShiny) : null;
+  const artwork = selected ? (selected.spriteUrl || (selected.id > 0 ? getOfficialArtwork(selected.id, isShiny) : null)) : null;
 
   // Não renderiza nada no SSR (evita erro de hydration com o portal)
   if (!mounted) return null;
@@ -279,14 +291,14 @@ export default function AddPokemonModal({
                               className="add-pokemon-suggestion"
                             >
                               <img
-                                src={getOfficialArtwork(s.id)}
+                                src={s.spriteUrl || getOfficialArtwork(s.id)}
                                 alt=""
                                 className="add-pokemon-suggestion-sprite"
                                 draggable={false}
                               />
                               <span className="add-pokemon-suggestion-name">{s.name}</span>
                               <span className="add-pokemon-suggestion-num">
-                                #{String(s.id).padStart(3, '0')}
+                                {s.fakeSpeciesId ? 'FAKE' : `#${String(s.id).padStart(3, '0')}`}
                               </span>
                             </button>
                           </li>

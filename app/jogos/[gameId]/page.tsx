@@ -40,7 +40,7 @@ export default async function QualModoPage({
         {/* Linha de destaque dourada, cresce da esquerda (como em Jogos) */}
         <div className="qualmodo-divider mx-auto mb-4" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 max-w-5xl mx-auto mt-12">
+        <div className={`grid grid-cols-1 gap-12 md:gap-10 ${game.type === 'HACK_ROM' ? 'md:grid-cols-3 max-w-6xl' : 'md:grid-cols-2 max-w-5xl'} mx-auto mt-12`}>
           <ModeCard
             href={`/jogos/${gameId}/trainer-card`}
             label="TRAINER CARD"
@@ -53,6 +53,7 @@ export default async function QualModoPage({
             labelDelay={0.75}
             floatDelay={0}
           />
+          {game.type === 'HACK_ROM' && <ModeCard href={`/jogos/${gameId}/hackroom`} label="HACKROOM" imageUrl="/images/modo/living-dex.png" alt="Ficha da Hackroom" direction="right" aura={{ primary: '#fbbf24', secondary: '#8B5CF6' }} entranceDelay={0.6} pokemonDelay={0.7} labelDelay={0.85} floatDelay={2.4} />}
           <ModeCard
             href={`/jogos/${gameId}/living-dex`}
             label="LIVING DEX"

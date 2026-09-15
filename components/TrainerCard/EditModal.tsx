@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/trainer-card';
 import PokemonPicker from './PokemonPicker';
 import { getOfficialArtwork, getFallbackSprite } from '@/lib/pokeapi/sprite-variants';
+import { useXpFeedback } from '@/components/Xp/XpFeedbackProvider';
 
 type Tab = 'trainer' | 'team' | 'badges';
 
@@ -33,6 +34,7 @@ interface Props {
   trainerCardId: string;
   initialName: string;
   initialSpriteUrl: string | null;
+  initialPlaytime: string | null;
   initialShowcase: ShowcaseSlot[];
   initialBadges: BadgeData[];
   onClose: () => void;
@@ -50,16 +52,19 @@ export default function EditModal({
   trainerCardId,
   initialName,
   initialSpriteUrl,
+  initialPlaytime,
   initialShowcase,
   initialBadges,
   onClose,
 }: Props) {
+  const { showFeedback } = useXpFeedback();
   const [tab, setTab] = useState<Tab>('trainer');
   const [saving, setSaving] = useState(false);
 
   // Treinador
   const [name, setName] = useState(initialName);
   const [spriteUrl, setSpriteUrl] = useState(initialSpriteUrl);
+  const [playtime, setPlaytime] = useState(initialPlaytime ?? '');
 
   // Time — 6 slots
   const [team, setTeam] = useState<TeamState[]>(() => {
@@ -88,6 +93,7 @@ export default function EditModal({
       await updateTrainerInfo(trainerCardId, {
         trainerName: name.trim() || 'Hak',
         characterSpriteUrl: spriteUrl,
+        playtime: playtime.trim() || null,
       });
 
       const filled = team
@@ -112,7 +118,10 @@ export default function EditModal({
 
   async function handleBadgeToggle(b: BadgeData) {
     const next = !b.earnedAt;
-    await toggleBadgeEarned(b.id, next);
+    const result = await toggleBadgeEarned(b.id, next);
+    if (result.ok && result.xp) {
+      showFeedback(result.xp, `${b.name} conquistada`);
+    }
     setBadges((prev) =>
       prev.map((x) =>
         x.id === b.id ? { ...x, earnedAt: next ? new Date().toISOString() : null } : x,
@@ -211,6 +220,24 @@ return (
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      className="w-full rounded-xl border border-white/12 bg-slate-900/70 px-3.5 py-2 text-sm text-white placeholder:text-white/30 focus:border-cyan-300/60 focus:outline-none focus:ring-2 focus:ring-cyan-300/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="mb-1.5 block font-display text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/80"
+                      htmlFor="playtime"
+                    >
+                      Playtime
+                    </label>
+                    <input
+                      id="playtime"
+                      name="playtime"
+                      type="text"
+                      placeholder="ex: 42h 30min"
+                      value={playtime}
+                      onChange={(e) => setPlaytime(e.target.value)}
                       className="w-full rounded-xl border border-white/12 bg-slate-900/70 px-3.5 py-2 text-sm text-white placeholder:text-white/30 focus:border-cyan-300/60 focus:outline-none focus:ring-2 focus:ring-cyan-300/20"
                     />
                   </div>

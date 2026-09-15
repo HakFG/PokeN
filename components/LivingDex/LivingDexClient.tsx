@@ -26,6 +26,7 @@ interface Owned {
   spriteUrl: string | null;
   spriteVariant: string | null;
   isShiny: boolean;
+  fakeSpeciesId?: string | null;
 }
 
 interface Props {
@@ -35,6 +36,7 @@ interface Props {
   ownedIds: number[];
   owned: Owned[];
   pokedexDescription: string;
+  fakeSpecies?: { id: string; name: string; spriteUrl: string | null }[];
 }
 
 export default function LivingDexClient({
@@ -44,6 +46,7 @@ export default function LivingDexClient({
   ownedIds,
   owned,
   pokedexDescription,
+  fakeSpecies = [],
 }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -142,6 +145,7 @@ export default function LivingDexClient({
           boxNumber={addTarget.box}
           boxSlot={addTarget.slot}
           isHackRoom={isHackRoom}
+          fakeSpecies={fakeSpecies}
           initialSpecies={addTarget.species}
           onClose={() => setAddTarget(null)}
           onSaved={() => router.refresh()}

@@ -6,7 +6,7 @@ import LivingDexBackground from '@/components/LivingDex/LivingDexBackground';
 import { prisma } from '@/lib/prisma';
 import { getPokedexServer } from '@/lib/pokeapi/server-pokedex';
 import { POKEDEX_BY_ID } from '@/lib/pokeapi/pokedex-map';
-import { resolveSpritesBatch } from '@/lib/pokeapi/server-sprites';
+import { resolvePokemonDisplay } from '@/lib/pokemon-resolver';
 
 export default async function LivingDexPage({
   params,
@@ -17,7 +17,7 @@ export default async function LivingDexPage({
 
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    include: { hackRoom: true },
+    include: { hackRoom: { include: { fakeSpecies: true } } },
   });
   if (!game) notFound();
 
@@ -31,25 +31,25 @@ export default async function LivingDexPage({
 
   const ownedIds = [...new Set(owned.map((pokemon) => pokemon.pokemonId))];
 
-  const spriteMap = await resolveSpritesBatch(
-    owned.map((pokemon) => ({ pokemonId: pokemon.pokemonId, gameId })),
-  );
-
   const speciesMap = new Map(species.map((item) => [item.id, item.name]));
 
-  const ownedForBox = owned.map((pokemon) => ({
+  const ownedForBox = await Promise.all(owned.map(async (pokemon) => {
+    const display = await resolvePokemonDisplay({ pokemonId: pokemon.pokemonId, fakeSpeciesId: pokemon.fakeSpeciesId, gameId, nickname: pokemon.nickname, isShiny: pokemon.isShiny, spriteVariant: pokemon.spriteVariant });
+    return ({
     id: pokemon.id,
     pokemonId: pokemon.pokemonId,
     name:
-      pokemon.nickname ??
+      display.name ??
       speciesMap.get(pokemon.pokemonId) ??
       `#${pokemon.pokemonId}`,
     level: pokemon.level,
     boxNumber: pokemon.boxNumber,
     boxSlot: pokemon.boxSlot,
-    spriteUrl: spriteMap.get(`${pokemon.pokemonId}:${gameId}`) ?? null,
+    spriteUrl: display.spriteUrl,
     spriteVariant: pokemon.spriteVariant,
     isShiny: pokemon.isShiny,
+    fakeSpeciesId: pokemon.fakeSpeciesId,
+  });
   }));
 
   const pokedexInfo = game.pokedexId ? POKEDEX_BY_ID[game.pokedexId] : null;
@@ -72,6 +72,7 @@ export default async function LivingDexPage({
           <LivingDexClientLoader
             gameId={gameId}
             isHackRoom={game.type === 'HACK_ROM'}
+            fakeSpecies={game.hackRoom?.fakeSpecies.map((fake) => ({ id: fake.id, name: fake.name, spriteUrl: fake.spriteUrl })) ?? []}
             species={species}
             ownedIds={ownedIds}
             owned={ownedForBox}

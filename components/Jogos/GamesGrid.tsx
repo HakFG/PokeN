@@ -8,6 +8,7 @@ interface Game {
   themeColor: string;
   isCurrentlyPlaying: boolean;
   bannerUrl: string | null;
+  status?: 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED';
 }
 
 export default function GamesGrid({ games }: { games: Game[] }) {
@@ -23,6 +24,7 @@ export default function GamesGrid({ games }: { games: Game[] }) {
           themeColor={game.themeColor}
           isCurrentlyPlaying={game.isCurrentlyPlaying}
           bannerUrl={game.bannerUrl}
+          status={game.status}
           index={index}
         />
       ))}

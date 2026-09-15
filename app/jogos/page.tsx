@@ -26,7 +26,7 @@ export default async function JogosPage() {
         <div className="jogos-divider" />
         <main className="mx-auto w-full max-w-7xl flex-1 px-6 pb-20 md:px-12">
         <HexHeading label="JOGOS DA FRÂNQUIA" size="sm" />
-        <GamesGrid games={franchise.map((game) => ({ id: game.id, name: game.name, themeColor: game.themeColor, isCurrentlyPlaying: game.isCurrentlyPlaying, bannerUrl: game.bannerUrl }))} />
+        <GamesGrid games={franchise.map((game) => ({ id: game.id, name: game.name, themeColor: game.themeColor, isCurrentlyPlaying: game.isCurrentlyPlaying, bannerUrl: game.bannerUrl, status: game.status }))} />
 
         <section className="mt-20">
         <HexHeading label="HACK ROOMS" size="sm" />
@@ -41,7 +41,7 @@ export default async function JogosPage() {
         {hackRooms.length === 0 ? (
           <p className="py-8 text-center text-slate-400">Nenhuma hack room ainda. Crie a primeira acima.</p>
         ) : (
-          <GamesGrid games={hackRooms.map((game) => ({ id: game.id, name: game.name, themeColor: game.themeColor, isCurrentlyPlaying: game.isCurrentlyPlaying, bannerUrl: game.bannerUrl }))} />
+          <GamesGrid games={hackRooms.map((game) => ({ id: game.id, name: game.name, themeColor: game.themeColor, isCurrentlyPlaying: game.isCurrentlyPlaying, bannerUrl: game.bannerUrl, status: game.status }))} />
         )}
         </section>
         </main>

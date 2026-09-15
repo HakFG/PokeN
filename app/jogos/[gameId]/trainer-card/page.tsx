@@ -6,6 +6,7 @@ import EditButton from '@/components/TrainerCard/EditButton';
 import { prisma } from '@/lib/prisma';
 import { getPokemonServer } from '@/lib/pokeapi/server';
 import { getOrCreateTrainerCard } from '@/lib/actions/trainer-card';
+import { getTrainerCardStats } from '@/lib/stats/trainer-card-aggregates';
 import type { PokemonDetail } from '@/lib/pokeapi/types';
 import TrainerCardBackground from '@/components/TrainerCard/TrainerCardBackground';
 
@@ -20,6 +21,7 @@ export default async function TrainerCardPage({
   if (!game) notFound();
 
   const card = await getOrCreateTrainerCard(gameId);
+  const stats = await getTrainerCardStats(gameId);
 
   const details = new Map<number, PokemonDetail>();
   await Promise.all(
@@ -56,6 +58,7 @@ export default async function TrainerCardPage({
             trainerCardId={card.id}
             trainerName={card.trainerName}
             characterSpriteUrl={card.characterSpriteUrl}
+            playtime={card.playtime}
             showcase={showcase}
             badges={card.badges}
           />
@@ -67,9 +70,12 @@ export default async function TrainerCardPage({
             game={game}
             trainerName={card.trainerName}
             characterSpriteUrl={card.characterSpriteUrl}
+            trainerIdCode={card.trainerIdCode}
+            playtime={card.playtime}
             showcase={showcase}
             badges={card.badges}
             details={details}
+            stats={stats}
           />
         </div>
       </main>

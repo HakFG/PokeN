@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { grantXp } from '@/lib/actions/profile';
-import { XP_VALUES } from '@/lib/xp';
+import { grantXp, mergeXpResults } from '@/lib/xp';
+import { generateTrainerId } from '@/lib/trainer-card/generate-id';
 
 /**
  * Busca o TrainerCard do jogo.
@@ -32,6 +32,7 @@ export async function getOrCreateTrainerCard(gameId: string) {
       data: {
         gameId,
         trainerName: 'Hak',
+        trainerIdCode: generateTrainerId(),
         badges: {
           create: Array.from({ length: 8 }, (_, index) => ({
             name: `Insígnia ${index + 1}`,
@@ -63,6 +64,14 @@ export async function getOrCreateTrainerCard(gameId: string) {
     });
   }
 
+  // Caso 4: cards antigos sem Trainer ID → gera um
+  if (!existing.trainerIdCode) {
+    await prisma.trainerCard.update({
+      where: { id: existing.id },
+      data: { trainerIdCode: generateTrainerId() },
+    });
+  }
+
   return prisma.trainerCard.findUniqueOrThrow({
     where: { id: existing.id },
     include: {
@@ -75,6 +84,7 @@ export async function getOrCreateTrainerCard(gameId: string) {
 interface TrainerInfoInput {
   trainerName: string;
   characterSpriteUrl: string | null;
+  playtime?: string | null;
 }
 
 /** Atualiza nome e sprite do treinador. */
@@ -93,6 +103,7 @@ export async function updateTrainerInfo(
     data: {
       trainerName,
       characterSpriteUrl: data.characterSpriteUrl,
+      ...(data.playtime !== undefined && { playtime: data.playtime }),
     },
     select: { gameId: true },
   });
@@ -138,9 +149,8 @@ export async function renameBadge(badgeId: string, name: string) {
 /** Marca/desmarca conquista. Concede XP na primeira conquista. */
 export async function toggleBadgeEarned(badgeId: string, earned: boolean) {
   const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
-  if (!badge) return;
+  if (!badge) return { ok: false as const, xp: null };
 
-  // Concede XP só na PRIMEIRA vez que a insígnia é conquistada
   const shouldAwardXp = earned && !badge.xpAwarded;
 
   await prisma.badge.update({
@@ -151,9 +161,12 @@ export async function toggleBadgeEarned(badgeId: string, earned: boolean) {
     },
   });
 
+  let xp = null;
   if (shouldAwardXp) {
-    await grantXp(XP_VALUES.BADGE_EARNED);
+    const result = await grantXp('BADGE_EARNED', { badgeId });
+    xp = mergeXpResults([result]);
   }
 
   revalidatePath('/jogos', 'layout');
+  return { ok: true as const, xp };
 }

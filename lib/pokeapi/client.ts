@@ -76,3 +76,44 @@ export async function getSpecies(id: number): Promise<PokemonSpecies> {
   await setCachedSpecies(id, data);
   return data;
 }
+
+// Adicione no final do arquivo:
+
+export interface PokemonSearchResult {
+  id: number;
+  name: string;
+  animatedSpriteUrl: string;
+  fallbackSpriteUrl: string;
+}
+
+/** GIF animado estilo Gen V (Black/White) — só existe até #649. */
+export function getAnimatedSpriteUrl(id: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
+}
+
+/** Artwork oficial — usado como fallback do GIF. */
+export function getArtworkSpriteUrl(id: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+}
+
+/** Busca no cache do IndexedDB (mesma lista da Pokedex, sem nova rede). */
+export async function searchPokemonByName(
+  query: string,
+): Promise<PokemonSearchResult[]> {
+  const q = query.toLowerCase().trim();
+  if (q.length < 2) return [];
+
+  const list = await getPokemonList();
+  return list.results
+    .map((r) => {
+      const id = Number(r.url.split('/').filter(Boolean).pop());
+      return {
+        id,
+        name: r.name,
+        animatedSpriteUrl: getAnimatedSpriteUrl(id),
+        fallbackSpriteUrl: getArtworkSpriteUrl(id),
+      };
+    })
+    .filter((p) => p.id > 0 && p.id <= 1025 && p.name.includes(q))
+    .slice(0, 12);
+}

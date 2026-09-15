@@ -27,8 +27,10 @@ interface Props {
     spriteUrl: string | null;
     spriteVariant: string | null;
     isShiny: boolean;
+    fakeSpeciesId?: string | null;
   }[];
   pokedexDescription: string;
+  fakeSpecies?: { id: string; name: string; spriteUrl: string | null }[];
 }
 
 export default function LivingDexClientLoader(props: Props) {

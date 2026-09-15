@@ -1,76 +1,31 @@
-// app/jogos/page.tsx
 import Link from 'next/link';
 import Header from '@/components/Header';
-import HexHeading from '@/components/HexHeading';
-import GameBanner from '@/components/GameBanner';
-import { prisma } from '@/lib/prisma';
+import NovaHackRoomForm from './NovaHackRoomForm';
 
-export default async function JogosPage() {
-  const [franchise, hackRooms] = await Promise.all([
-    prisma.game.findMany({
-      where: { type: 'FRANCHISE' },
-      orderBy: { createdAt: 'asc' },
-    }),
-    prisma.game.findMany({
-      where: { type: 'HACK_ROM' },
-      orderBy: { createdAt: 'desc' },
-    }),
-  ]);
-
+export default function NovaHackRoomPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="relative min-h-screen overflow-hidden bg-[#1D132D]">
       <Header />
-
-      <main className="flex-1 px-8 md:px-20 pb-16">
-        {/* Seção Jogos da Franquia */}
-        <HexHeading label="JOGOS DA FRÂNQUIA" size="sm" />
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-16">
-          {franchise.length === 0 ? (
-            <p className="col-span-full text-center text-slate-500 py-8">
-              Nenhum jogo cadastrado. Rode <code>npx prisma db seed</code>.
+      <main className="relative z-10 mx-auto w-full max-w-2xl px-6 py-10 md:px-12">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-300/80">
+              Hack Rooms
             </p>
-          ) : (
-            franchise.map((g) => (
-              <GameBanner
-                key={g.id}
-                gameId={g.id}
-                name={g.name}
-                themeColor={g.themeColor}
-                bannerUrl={g.bannerUrl}
-              />
-            ))
-          )}
-        </div>
-
-        {/* Seção Hack Rooms */}
-        <HexHeading label="HACK ROOMS" size="sm" />
-
-        <div className="flex justify-center mb-6">
+            <h1 className="mt-1 font-display text-2xl font-black uppercase tracking-[0.08em] text-white">
+              Nova Hack Room
+            </h1>
+          </div>
           <Link
-            href="/jogos/nova-hackroom"
-            className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition"
+            href="/jogos"
+            className="rounded-xl border border-white/15 px-3 py-1.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-white/70 transition hover:bg-white/5"
           >
-            + Nova Hack Room
+            Voltar
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {hackRooms.length === 0 ? (
-            <p className="col-span-full text-center text-slate-500 py-8">
-              Nenhuma hack room ainda. Crie a primeira acima.
-            </p>
-          ) : (
-            hackRooms.map((g) => (
-              <GameBanner
-                key={g.id}
-                gameId={g.id}
-                name={g.name}
-                themeColor={g.themeColor}
-                bannerUrl={g.bannerUrl}
-              />
-            ))
-          )}
+        <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md md:p-8">
+          <NovaHackRoomForm />
         </div>
       </main>
     </div>

@@ -3,8 +3,7 @@
 import { put } from '@vercel/blob';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { grantXp } from '@/lib/actions/profile';
-import { XP_VALUES } from '@/lib/xp';
+import { grantXp, mergeXpResults, type GrantXpResult } from '@/lib/xp';
 import { getPokedexServer } from '@/lib/pokeapi/server-pokedex';
 import { randomSpriteVariant } from '@/lib/pokeapi/sprite-variants';
 
@@ -13,6 +12,7 @@ export async function createOwnedPokemon(formData: FormData) {
   const boxNumber = Number(formData.get('boxNumber'));
   const boxSlot = Number(formData.get('boxSlot'));
   const pokemonId = Number(formData.get('pokemonId'));
+  const fakeSpeciesId = String(formData.get('fakeSpeciesId') ?? '').trim() || null;
   const level = Number(formData.get('level')) || 1;
   const nickname = String(formData.get('nickname') ?? '').trim() || null;
   const isShiny = formData.get('isShiny') === 'on';
@@ -21,7 +21,7 @@ export async function createOwnedPokemon(formData: FormData) {
   if (
     !gameId ||
     !Number.isInteger(pokemonId) ||
-    pokemonId < 1 ||
+    (pokemonId < 1 && !fakeSpeciesId) ||
     !Number.isInteger(boxNumber) ||
     boxNumber < 1 ||
     !Number.isInteger(boxSlot) ||
@@ -39,13 +39,15 @@ export async function createOwnedPokemon(formData: FormData) {
     include: { hackRoom: true },
   });
   if (!game) throw new Error('Jogo não encontrado');
+  if (fakeSpeciesId && (!game.hackRoom || !(await prisma.fakeSpecies.findFirst({ where: { id: fakeSpeciesId, hackRoomId: game.hackRoom.id } })))) throw new Error('Fakémon inválido para esta hackroom');
 
   const isNewSpecies =
-    (await prisma.ownedPokemon.count({ where: { pokemonId } })) === 0;
+    fakeSpeciesId ? (await prisma.ownedPokemon.count({ where: { fakeSpeciesId } })) === 0 : (await prisma.ownedPokemon.count({ where: { pokemonId } })) === 0;
 
   let customSpriteUrl: string | null = null;
   if (
     game.type === 'HACK_ROM' &&
+    !fakeSpeciesId &&
     sprite instanceof File &&
     sprite.size > 0 &&
     game.hackRoom
@@ -69,7 +71,8 @@ export async function createOwnedPokemon(formData: FormData) {
         gameId,
         boxNumber,
         boxSlot,
-        pokemonId,
+        pokemonId: fakeSpeciesId ? 0 : pokemonId,
+        fakeSpeciesId,
         level,
         nickname,
         isShiny,
@@ -95,11 +98,22 @@ export async function createOwnedPokemon(formData: FormData) {
     }
   });
 
-  await grantXp(
-    isNewSpecies ? XP_VALUES.NEW_SPECIES : XP_VALUES.DUPLICATE_SPECIES,
+  const xpResults: GrantXpResult[] = [];
+
+  xpResults.push(
+    await grantXp(
+      isNewSpecies ? 'CATCH_NEW_SPECIES' : 'CATCH_DUPLICATE_SPECIES',
+      { pokemonId, gameId },
+    ),
   );
 
-  if (game.pokedexId && !game.completionBonusAwarded) {
+  if (isShiny) {
+    xpResults.push(
+      await grantXp('CATCH_SHINY_BONUS', { pokemonId, gameId }),
+    );
+  }
+
+  if (!fakeSpeciesId && game.pokedexId && !game.completionBonusAwarded) {
     const species = await getPokedexServer(game.pokedexId);
     const ownedDistinct = await prisma.ownedPokemon.findMany({
       where: { gameId },
@@ -114,12 +128,14 @@ export async function createOwnedPokemon(formData: FormData) {
       });
 
       if (completion.count > 0) {
-        await grantXp(XP_VALUES.COMPLETE_DEX);
+        xpResults.push(await grantXp('DEX_COMPLETE_GAME', { gameId }));
       }
     }
   }
 
   revalidatePath(`/jogos/${gameId}/living-dex`);
+
+  return { ok: true as const, xp: mergeXpResults(xpResults) };
 }
 
 export async function deleteOwnedPokemon(id: string, gameId: string) {
