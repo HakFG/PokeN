@@ -55,10 +55,15 @@ export default async function TrainerCardPage({
         {/* Barra de ações */}
         <div className="mb-6 flex items-center justify-end">
           <EditButton
+            gameId={gameId}
             trainerCardId={card.id}
             trainerName={card.trainerName}
             characterSpriteUrl={card.characterSpriteUrl}
+            trainerPresetId={card.trainerPresetId}
             playtime={card.playtime}
+            gameStatus={game.status}
+            isCurrentlyPlaying={game.isCurrentlyPlaying}
+            startedAt={game.startedAt}
             showcase={showcase}
             badges={card.badges}
           />

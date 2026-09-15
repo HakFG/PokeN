@@ -12,6 +12,7 @@ interface Owned {
   id: string;
   pokemonId: number;
   name: string;
+  nickname: string | null;
   level: number;
   boxNumber: number;
   boxSlot: number;

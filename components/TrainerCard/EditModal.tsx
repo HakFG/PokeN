@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TRAINER_PRESETS } from '@/lib/presets/trainers';
 import {
   updateTrainerInfo,
+  uploadTrainerSprite,
   updateShowcase,
   renameBadge,
   toggleBadgeEarned,
@@ -12,6 +13,7 @@ import {
 import PokemonPicker from './PokemonPicker';
 import { getOfficialArtwork, getFallbackSprite } from '@/lib/pokeapi/sprite-variants';
 import { useXpFeedback } from '@/components/Xp/XpFeedbackProvider';
+import { updateGameProgress, type GameProgressState } from '@/lib/actions/game-progress';
 
 type Tab = 'trainer' | 'team' | 'badges';
 
@@ -34,7 +36,11 @@ interface Props {
   trainerCardId: string;
   initialName: string;
   initialSpriteUrl: string | null;
+  initialTrainerPresetId: string | null;
   initialPlaytime: string | null;
+  initialGameStatus: 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED';
+  initialIsCurrentlyPlaying: boolean;
+  initialStartedAt: Date | string | null;
   initialShowcase: ShowcaseSlot[];
   initialBadges: BadgeData[];
   onClose: () => void;
@@ -49,10 +55,15 @@ interface TeamState {
 }
 
 export default function EditModal({
+  gameId,
   trainerCardId,
   initialName,
   initialSpriteUrl,
+  initialTrainerPresetId,
   initialPlaytime,
+  initialGameStatus,
+  initialIsCurrentlyPlaying,
+  initialStartedAt,
   initialShowcase,
   initialBadges,
   onClose,
@@ -64,7 +75,20 @@ export default function EditModal({
   // Treinador
   const [name, setName] = useState(initialName);
   const [spriteUrl, setSpriteUrl] = useState(initialSpriteUrl);
+  const [selectedTrainer, setSelectedTrainer] = useState<string | null>(initialTrainerPresetId);
+  const [spriteStatus, setSpriteStatus] = useState<string | null>(null);
+  const spriteInputRef = useRef<HTMLInputElement>(null);
   const [playtime, setPlaytime] = useState(initialPlaytime ?? '');
+  const [gameProgress, setGameProgress] = useState<GameProgressState>(
+    initialGameStatus === 'COMPLETED'
+      ? 'COMPLETED'
+      : initialGameStatus === 'DROPPED'
+        ? 'DROPPED'
+        : initialStartedAt
+          ? 'IN_PROGRESS'
+          : 'NOT_STARTED',
+  );
+  const [currentlyPlaying, setCurrentlyPlaying] = useState(initialIsCurrentlyPlaying);
 
   // Time — 6 slots
   const [team, setTeam] = useState<TeamState[]>(() => {
@@ -93,8 +117,10 @@ export default function EditModal({
       await updateTrainerInfo(trainerCardId, {
         trainerName: name.trim() || 'Hak',
         characterSpriteUrl: spriteUrl,
+        trainerPresetId: selectedTrainer,
         playtime: playtime.trim() || null,
       });
+      await updateGameProgress(gameId, gameProgress, currentlyPlaying);
 
       const filled = team
         .filter((s) => s.pokemonId !== null)
@@ -135,6 +161,18 @@ export default function EditModal({
     setBadges((prev) =>
       prev.map((x) => (x.id === b.id ? { ...x, name: newName.trim() } : x)),
     );
+  }
+
+  async function handleSpriteUpload(file: File | undefined) {
+    if (!file) return;
+    setSpriteStatus(null);
+    try {
+      const result = await uploadTrainerSprite(trainerCardId, file);
+      setSpriteUrl(result.spriteUrl);
+      setSpriteStatus('Sprite enviado e selecionado.');
+    } catch (error) {
+      setSpriteStatus(error instanceof Error ? error.message : 'Não foi possível enviar o sprite');
+    }
   }
 
 return (
@@ -242,17 +280,53 @@ return (
                     />
                   </div>
 
+                  <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/[.04] p-3">
+                    <label className="block font-display text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/80" htmlFor="game-progress">
+                      Progresso do jogo
+                    </label>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <select
+                        id="game-progress"
+                        value={gameProgress}
+                        onChange={(event) => {
+                          const next = event.target.value as GameProgressState;
+                          setGameProgress(next);
+                          if (next !== 'IN_PROGRESS') setCurrentlyPlaying(false);
+                        }}
+                        className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-xs font-bold text-white focus:border-cyan-300/60 focus:outline-none"
+                      >
+                        <option value="NOT_STARTED">Não iniciado</option>
+                        <option value="IN_PROGRESS">Em progresso</option>
+                        <option value="COMPLETED">Concluído</option>
+                        <option value="DROPPED">Pausado</option>
+                      </select>
+                      <label className="flex items-center gap-2 text-xs font-semibold text-white/80">
+                        <input type="checkbox" checked={currentlyPlaying} disabled={gameProgress !== 'IN_PROGRESS'} onChange={(event) => setCurrentlyPlaying(event.target.checked)} className="h-4 w-4 accent-cyan-300" />
+                        Estou jogando este jogo agora
+                      </label>
+                    </div>
+                    <p className="mt-2 text-[11px] text-white/45">Ao salvar, as datas de início e conclusão são registradas automaticamente.</p>
+                  </div>
+
                   <div>
                     <label className="mb-2 block font-display text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/80">
                       Sprite do treinador
                     </label>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    <p className="mb-3 text-xs text-white/55">Escolha um protagonista e envie seu PNG, WEBP ou GIF. A imagem fica salva como URL na sua Trainer Card.</p>
+                    <input ref={spriteInputRef} type="file" accept="image/png,image/webp,image/gif,image/jpeg" className="sr-only" onChange={(event) => void handleSpriteUpload(event.target.files?.[0])} />
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => spriteInputRef.current?.click()} className="rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-3 py-2 font-display text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-300/20">Enviar sprite próprio</button>
+                      {spriteUrl && <button type="button" onClick={() => { setSpriteUrl(null); setSelectedTrainer(null); setSpriteStatus('Sprite removido. Salve para confirmar.'); }} className="rounded-xl border border-red-300/25 px-3 py-2 font-display text-[10px] font-bold uppercase tracking-[0.14em] text-red-200 hover:bg-red-400/10">Remover seleção</button>}
+                      {spriteStatus && <span className="text-xs text-cyan-100">{spriteStatus}</span>}
+                    </div>
+                    {spriteUrl && <div className="mb-3 flex items-center gap-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[.04] p-2"><img src={spriteUrl} alt="Prévia do sprite selecionado" className="h-14 w-14 object-contain [image-rendering:pixelated]" /><span className="text-xs text-cyan-100/80">Sprite atual da Trainer Card</span></div>}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                       {TRAINER_PRESETS.map((p) => (
                         <SpriteTile
                           key={p.id}
                           preset={p}
-                          selected={spriteUrl === p.spriteUrl}
-                          onSelect={() => setSpriteUrl(p.spriteUrl)}
+                          selected={selectedTrainer === p.id}
+                          onSelect={() => { setSelectedTrainer(p.id); setSpriteStatus(`${p.label} selecionado. Agora envie o sprite dele.`); }}
                         />
                       ))}
                     </div>
@@ -486,11 +560,10 @@ function SpriteTile({
   selected,
   onSelect,
 }: {
-  preset: { id: string; label: string; spriteUrl: string };
+  preset: { id: string; label: string; game: string };
   selected: boolean;
   onSelect: () => void;
 }) {
-  const [failed, setFailed] = useState(false);
   const initials = preset.label
     .split(' ')
     .map((w) => w[0])
@@ -509,20 +582,12 @@ function SpriteTile({
       }`}
     >
       <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-slate-900/80">
-        {failed ? (
-          <span className="font-display text-sm font-black text-cyan-200">{initials}</span>
-        ) : (
-          <img
-            src={preset.spriteUrl}
-            alt={preset.label}
-            onError={() => setFailed(true)}
-            className="h-full w-full object-contain [image-rendering:pixelated]"
-          />
-        )}
+        <span className="font-display text-sm font-black text-cyan-200">{initials}</span>
       </div>
       <span className="text-center text-[9px] font-bold uppercase tracking-wider text-white/70 group-hover:text-white">
         {preset.label}
       </span>
+      <span className="text-center text-[8px] leading-tight text-white/40">{preset.game}</span>
     </button>
   );
 }

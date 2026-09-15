@@ -16,11 +16,12 @@ interface Props {
   gameId: string;
   isHackRoom: boolean;
   species: { id: number; entryNumber: number; name: string }[];
-  ownedIds: number[];
+  ownedIds: string[];
   owned: {
     id: string;
     pokemonId: number;
     name: string;
+    nickname: string | null;
     level: number;
     boxNumber: number;
     boxSlot: number;

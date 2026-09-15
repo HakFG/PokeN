@@ -17,19 +17,30 @@ export default async function LivingDexPage({
 
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    include: { hackRoom: { include: { fakeSpecies: true } } },
+    include: { hackRoom: { include: { fakeSpecies: true, pokedexEntries: { include: { fakeSpecies: true } } } } },
   });
   if (!game) notFound();
 
-  const [owned, species] = await Promise.all([
+  const [owned, defaultSpecies] = await Promise.all([
     prisma.ownedPokemon.findMany({
       where: { gameId },
       orderBy: [{ boxNumber: 'asc' }, { boxSlot: 'asc' }],
     }),
-    getPokedexServer(game.pokedexId),
+    game.type === 'HACK_ROM' ? Promise.resolve([]) : getPokedexServer(game.pokedexId),
   ]);
 
-  const ownedIds = [...new Set(owned.map((pokemon) => pokemon.pokemonId))];
+  const species = game.type === 'HACK_ROM'
+    ? game.hackRoom!.pokedexEntries
+      .sort((first, second) => first.entryNumber - second.entryNumber)
+      .map((entry) => ({
+        id: entry.pokemonId ?? 0,
+        entryNumber: entry.entryNumber,
+        name: entry.name,
+        fakeSpeciesId: entry.fakeSpeciesId,
+        spriteUrl: entry.fakeSpecies?.spriteUrl ?? null,
+      }))
+    : defaultSpecies;
+  const ownedIds = [...new Set(owned.map((pokemon) => pokemon.fakeSpeciesId ? `fake:${pokemon.fakeSpeciesId}` : `pokemon:${pokemon.pokemonId}`))];
 
   const speciesMap = new Map(species.map((item) => [item.id, item.name]));
 
@@ -42,6 +53,7 @@ export default async function LivingDexPage({
       display.name ??
       speciesMap.get(pokemon.pokemonId) ??
       `#${pokemon.pokemonId}`,
+    nickname: pokemon.nickname,
     level: pokemon.level,
     boxNumber: pokemon.boxNumber,
     boxSlot: pokemon.boxSlot,
@@ -56,7 +68,7 @@ export default async function LivingDexPage({
   const pokedexDescription = pokedexInfo
     ? pokedexInfo.description
     : game.type === 'HACK_ROM'
-      ? 'Pokédex Nacional (fallback para hack room)'
+      ? 'Pokédex personalizada da Hackroom'
       : 'Pokédex Nacional';
 
   return (
@@ -72,7 +84,7 @@ export default async function LivingDexPage({
           <LivingDexClientLoader
             gameId={gameId}
             isHackRoom={game.type === 'HACK_ROM'}
-            fakeSpecies={game.hackRoom?.fakeSpecies.map((fake) => ({ id: fake.id, name: fake.name, spriteUrl: fake.spriteUrl })) ?? []}
+            fakeSpecies={game.hackRoom?.pokedexEntries.flatMap((entry) => entry.fakeSpecies ? [{ id: entry.fakeSpecies.id, name: entry.fakeSpecies.name, spriteUrl: entry.fakeSpecies.spriteUrl }] : []) ?? []}
             species={species}
             ownedIds={ownedIds}
             owned={ownedForBox}

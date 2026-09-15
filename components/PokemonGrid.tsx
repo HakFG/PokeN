@@ -32,7 +32,7 @@ export default function PokemonGrid({ entries }: Props) {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-[1500px] grid-cols-2 justify-items-center gap-x-4 gap-y-10 px-5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+    <div className="mx-auto grid w-full max-w-[1500px] grid-cols-2 justify-items-center gap-x-8 gap-y-12 px-5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
       {entries.map((entry, index) => (
         <PokemonGridItem
           key={entry.id}

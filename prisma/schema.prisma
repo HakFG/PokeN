@@ -11,20 +11,20 @@ datasource db {
 // ─────────────────────────────────────────────
 
 model Profile {
-  id                 String            @id @default(cuid())
+  id                 String              @id @default(cuid())
   name               String
-  level              Int               @default(1)
-  xp                 Int               @default(0)
-  totalXpEarned      Int               @default(0)      // ← NOVO: histórico acumulado
-  currentStreak      Int               @default(0)      // ← NOVO
-  longestStreak      Int               @default(0)      // ← NOVO
-  lastActivityDate   DateTime?                          // ← NOVO
+  level              Int                 @default(1)
+  xp                 Int                 @default(0)
+  totalXpEarned      Int                 @default(0) // ← NOVO: histórico acumulado
+  currentStreak      Int                 @default(0) // ← NOVO
+  longestStreak      Int                 @default(0) // ← NOVO
+  lastActivityDate   DateTime? // ← NOVO
   characterSpriteUrl String?
   favoritePokemon    FavoritePokemon[]
-  achievements       AchievementUnlock[]                // ← NOVO
-  xpLogs             XpLog[]                            // ← NOVO
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  achievements       AchievementUnlock[] // ← NOVO
+  xpLogs             XpLog[] // ← NOVO
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model FavoritePokemon {
@@ -68,19 +68,19 @@ model AchievementUnlock {
 // ─────────────────────────────────────────────
 
 model Game {
-  id                     String         @id @default(cuid())
+  id                     String     @id @default(cuid())
   name                   String
   type                   GameType
   themeColor             String
   bannerUrl              String?
-  isCurrentlyPlaying     Boolean        @default(false)
+  isCurrentlyPlaying     Boolean    @default(false)
   spriteKey              String?
   pokedexId              Int?
-  completionBonusAwarded Boolean        @default(false)
-  status                 GameStatus     @default(IN_PROGRESS)  // ← NOVO
-  startedAt              DateTime?                             // ← NOVO
-  completedAt            DateTime?                             // ← NOVO
-  createdAt              DateTime       @default(now())
+  completionBonusAwarded Boolean    @default(false)
+  status                 GameStatus @default(IN_PROGRESS) // ← NOVO
+  startedAt              DateTime? // ← NOVO
+  completedAt            DateTime? // ← NOVO
+  createdAt              DateTime   @default(now())
 
   hackRoom     HackRoom?
   ownedPokemon OwnedPokemon[]
@@ -99,18 +99,19 @@ enum GameStatus {
 }
 
 model HackRoom {
-  id           String                  @id @default(cuid())
-  gameId       String                  @unique
-  game         Game                    @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  description  String?
-  baseRomName  String?
-  regionName   String?
-  difficulty   HackDifficulty?
-  customSprites CustomSprite[]
-  screenshots  HackRoomScreenshot[]
-  fakeSpecies  FakeSpecies[]
-  gymLeaders   GymLeader[]
-  createdAt    DateTime                @default(now())
+  id             String                 @id @default(cuid())
+  gameId         String                 @unique
+  game           Game                   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  description    String?
+  baseRomName    String?
+  regionName     String?
+  difficulty     HackDifficulty?
+  customSprites  CustomSprite[]
+  screenshots    HackRoomScreenshot[]
+  fakeSpecies    FakeSpecies[]
+  pokedexEntries HackRoomPokedexEntry[]
+  gymLeaders     GymLeader[]
+  createdAt      DateTime               @default(now())
 }
 
 enum HackDifficulty {
@@ -132,24 +133,45 @@ model HackRoomScreenshot {
 }
 
 model FakeSpecies {
-  id            String       @id @default(cuid())
-  hackRoomId    String
-  hackRoom      HackRoom     @relation(fields: [hackRoomId], references: [id], onDelete: Cascade)
-  name          String
-  types         String[]
-  spriteUrl     String?
-  description   String?
-  stats         Json?
-  evolvesFromId String?
-  evolvesFrom   FakeSpecies? @relation("FakeEvolution", fields: [evolvesFromId], references: [id], onDelete: SetNull)
-  evolvesTo     FakeSpecies[] @relation("FakeEvolution")
-  ownedPokemon  OwnedPokemon[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id             String                 @id @default(cuid())
+  hackRoomId     String
+  hackRoom       HackRoom               @relation(fields: [hackRoomId], references: [id], onDelete: Cascade)
+  name           String
+  types          String[]
+  spriteUrl      String?
+  description    String?
+  stats          Json?
+  evolvesFromId  String?
+  evolvesFrom    FakeSpecies?           @relation("FakeEvolution", fields: [evolvesFromId], references: [id], onDelete: SetNull)
+  evolvesTo      FakeSpecies[]          @relation("FakeEvolution")
+  ownedPokemon   OwnedPokemon[]
+  pokedexEntries HackRoomPokedexEntry[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
 
   @@unique([hackRoomId, name])
   @@index([hackRoomId])
   @@index([evolvesFromId])
+}
+
+/// Uma espécie incluída na Pokédex personalizada de uma Hackroom.
+/// Entradas nativas usam pokemonId; Fakémon usam fakeSpeciesId.
+model HackRoomPokedexEntry {
+  id            String       @id @default(cuid())
+  hackRoomId    String
+  hackRoom      HackRoom     @relation(fields: [hackRoomId], references: [id], onDelete: Cascade)
+  pokemonId     Int?
+  fakeSpeciesId String?
+  fakeSpecies   FakeSpecies? @relation(fields: [fakeSpeciesId], references: [id], onDelete: Cascade)
+  name          String
+  entryNumber   Int
+  createdAt     DateTime     @default(now())
+
+  @@unique([hackRoomId, entryNumber])
+  @@unique([hackRoomId, pokemonId])
+  @@unique([hackRoomId, fakeSpeciesId])
+  @@index([hackRoomId])
+  @@index([fakeSpeciesId])
 }
 
 model GymLeader {
@@ -174,12 +196,12 @@ model CustomSprite {
   id         String   @id @default(cuid())
   hackRoomId String
   hackRoom   HackRoom @relation(fields: [hackRoomId], references: [id], onDelete: Cascade)
-  pokemonId  Int      // referência ao id da PokeAPI que esse sprite substitui/representa
-  imageUrl   String   // URL no bucket, nunca base64 no banco
+  pokemonId  Int // referência ao id da PokeAPI que esse sprite substitui/representa
+  imageUrl   String // URL no bucket, nunca base64 no banco
   createdAt  DateTime @default(now())
 
   @@unique([hackRoomId, pokemonId]) // CORREÇÃO: evita sprite duplicado para o mesmo pokémon
-  @@index([hackRoomId])             // CORREÇÃO: índice na FK
+  @@index([hackRoomId]) // CORREÇÃO: índice na FK
 }
 
 // ─────────────────────────────────────────────
@@ -187,24 +209,24 @@ model CustomSprite {
 // ─────────────────────────────────────────────
 
 model OwnedPokemon {
-  id            String   @id @default(cuid())
-  gameId        String
-  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  pokemonId     Int      // id da PokeAPI
-  fakeSpeciesId String?
-  fakeSpecies   FakeSpecies? @relation(fields: [fakeSpeciesId], references: [id], onDelete: SetNull)
-  nickname      String?
+  id             String       @id @default(cuid())
+  gameId         String
+  game           Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  pokemonId      Int // id da PokeAPI
+  fakeSpeciesId  String?
+  fakeSpecies    FakeSpecies? @relation(fields: [fakeSpeciesId], references: [id], onDelete: SetNull)
+  nickname       String?
   caughtLocation String?
-  level         Int
-  isShiny       Boolean  @default(false)
-  boxNumber     Int      @default(1)
-  boxSlot       Int      // posição dentro da box
-  moveset       Json?    // array de até 4 moves, salvos como string[]
-  spriteVariant String?  // "dream-world" | "official-artwork" | null
-  createdAt     DateTime @default(now())
+  level          Int
+  isShiny        Boolean      @default(false)
+  boxNumber      Int          @default(1)
+  boxSlot        Int // posição dentro da box
+  moveset        Json? // array de até 4 moves, salvos como string[]
+  spriteVariant  String? // "dream-world" | "official-artwork" | null
+  createdAt      DateTime     @default(now())
 
   @@unique([gameId, boxNumber, boxSlot])
-  @@index([gameId])   // CORREÇÃO: índice na FK
+  @@index([gameId]) // CORREÇÃO: índice na FK
   @@index([pokemonId]) // CORREÇÃO: útil para agregações por pokémon
   @@index([fakeSpeciesId])
 }
@@ -214,16 +236,17 @@ model OwnedPokemon {
 // ─────────────────────────────────────────────
 
 model TrainerCard {
-  id                  String                @id @default(cuid())
-  gameId              String                @unique
-  game                Game                  @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  trainerName         String
-  characterSpriteUrl  String?
-  trainerIdCode       String?               // ← NOVO
-  playtime            String?               // ← NOVO
-  badges              Badge[]
-  showcasePokemon     TrainerCardPokemon[]
-  createdAt           DateTime              @default(now())
+  id                 String               @id @default(cuid())
+  gameId             String               @unique
+  game               Game                 @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  trainerName        String
+  characterSpriteUrl String?
+  trainerPresetId    String?
+  trainerIdCode      String? // ← NOVO
+  playtime           String? // ← NOVO
+  badges             Badge[]
+  showcasePokemon    TrainerCardPokemon[]
+  createdAt          DateTime             @default(now())
 }
 
 model Badge {
@@ -232,7 +255,7 @@ model Badge {
   trainerCard   TrainerCard @relation(fields: [trainerCardId], references: [id], onDelete: Cascade)
   name          String
   iconUrl       String?
-  earnedAt      DateTime?   // null = ainda não conquistada
+  earnedAt      DateTime? // null = ainda não conquistada
   xpAwarded     Boolean     @default(false)
   gymLeader     GymLeader?
 
@@ -245,7 +268,7 @@ model TrainerCardPokemon {
   trainerCard   TrainerCard @relation(fields: [trainerCardId], references: [id], onDelete: Cascade)
   pokemonId     Int
   nickname      String?
-  slot          Int         // 1-6, posição no time
+  slot          Int // 1-6, posição no time
   moveset       Json?
 
   @@unique([trainerCardId, slot])

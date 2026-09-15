@@ -9,6 +9,8 @@ export interface PokedexSpecies {
   id: number;
   entryNumber: number;
   name: string;
+  fakeSpeciesId?: string | null;
+  spriteUrl?: string | null;
 }
 
 interface PokedexApiResponse {

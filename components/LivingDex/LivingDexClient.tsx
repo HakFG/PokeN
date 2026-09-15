@@ -20,6 +20,7 @@ interface Owned {
   id: string;
   pokemonId: number;
   name: string;
+  nickname: string | null;
   level: number;
   boxNumber: number;
   boxSlot: number;
@@ -33,7 +34,7 @@ interface Props {
   gameId: string;
   isHackRoom: boolean;
   species: PokedexSpecies[];
-  ownedIds: number[];
+  ownedIds: string[];
   owned: Owned[];
   pokedexDescription: string;
   fakeSpecies?: { id: string; name: string; spriteUrl: string | null }[];
@@ -60,8 +61,8 @@ export default function LivingDexClient({
   const ownedSet = new Set(ownedIds);
 
   function handleDragStart(event: DragStartEvent) {
-    const id = Number(event.active.id);
-    setDragging(species.find((item) => item.id === id) ?? null);
+    const id = String(event.active.id);
+    setDragging(species.find((item) => (item.fakeSpeciesId ? `fake:${item.fakeSpeciesId}` : `pokemon:${item.id}`) === id) ?? null);
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -72,7 +73,8 @@ export default function LivingDexClient({
 
     const boxNumber = Number(match[1]);
     const boxSlot = Number(match[2]);
-    const pokemonId = Number(event.active.id);
+    const speciesItem = species.find((item) => (item.fakeSpeciesId ? `fake:${item.fakeSpeciesId}` : `pokemon:${item.id}`) === String(event.active.id)) ?? null;
+    if (!speciesItem) return;
     const occupied = owned.some(
       (pokemon) => pokemon.boxNumber === boxNumber && pokemon.boxSlot === boxSlot,
     );
@@ -81,7 +83,7 @@ export default function LivingDexClient({
     setAddTarget({
       box: boxNumber,
       slot: boxSlot,
-      species: species.find((item) => item.id === pokemonId) ?? null,
+      species: speciesItem,
     });
   }
 
@@ -129,7 +131,7 @@ export default function LivingDexClient({
         {dragging && (
           <div className="livingdex-drag-ghost">
             <img
-              src={getOfficialArtwork(dragging.id)}
+              src={dragging.spriteUrl ?? getOfficialArtwork(dragging.id)}
               alt={dragging.name}
               className="h-16 w-16 object-contain drop-shadow-[0_8px_16px_rgba(34,211,238,0.6)]"
               draggable={false}
@@ -147,6 +149,7 @@ export default function LivingDexClient({
           isHackRoom={isHackRoom}
           fakeSpecies={fakeSpecies}
           initialSpecies={addTarget.species}
+          availableSpecies={species}
           onClose={() => setAddTarget(null)}
           onSaved={() => router.refresh()}
         />
@@ -198,7 +201,12 @@ function DetailPopup({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="livingdex-detail-popup-header">
-          <h3 className="livingdex-detail-popup-title">{owned.name}</h3>
+          <div>
+            <h3 className="livingdex-detail-popup-title">{owned.name}</h3>
+            {owned.nickname && owned.nickname.toLocaleLowerCase() !== owned.name.toLocaleLowerCase() && (
+              <p className="livingdex-detail-popup-nickname">Apelido: {owned.nickname}</p>
+            )}
+          </div>
           <span className="livingdex-detail-popup-level">Lv {owned.level}</span>
         </div>
         <p className="livingdex-detail-popup-slot">

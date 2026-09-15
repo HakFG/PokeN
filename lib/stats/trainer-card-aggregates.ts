@@ -11,7 +11,7 @@ export async function getTrainerCardStats(gameId: string) {
     }),
     prisma.game.findUnique({
       where: { id: gameId },
-      select: { status: true, startedAt: true, completedAt: true, pokedexId: true },
+      select: { status: true, isCurrentlyPlaying: true, startedAt: true, completedAt: true, pokedexId: true },
     }),
   ]);
 
@@ -27,6 +27,7 @@ export async function getTrainerCardStats(gameId: string) {
     dexPercent,
     isDexComplete: dexPercent >= 100,
     status: game?.status ?? 'IN_PROGRESS',
+    isCurrentlyPlaying: game?.isCurrentlyPlaying ?? false,
     startedAt: game?.startedAt ?? null,
     completedAt: game?.completedAt ?? null,
   };

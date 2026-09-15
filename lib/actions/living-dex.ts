@@ -36,10 +36,16 @@ export async function createOwnedPokemon(formData: FormData) {
 
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    include: { hackRoom: true },
+    include: { hackRoom: { include: { pokedexEntries: true } } },
   });
   if (!game) throw new Error('Jogo não encontrado');
   if (fakeSpeciesId && (!game.hackRoom || !(await prisma.fakeSpecies.findFirst({ where: { id: fakeSpeciesId, hackRoomId: game.hackRoom.id } })))) throw new Error('Fakémon inválido para esta hackroom');
+  if (game.type === 'HACK_ROM') {
+    const isInCustomDex = game.hackRoom?.pokedexEntries.some((entry) =>
+      fakeSpeciesId ? entry.fakeSpeciesId === fakeSpeciesId : entry.pokemonId === pokemonId,
+    );
+    if (!isInCustomDex) throw new Error('Adicione esta espécie à Pokédex da Hackroom antes de colocá-la na Living Dex');
+  }
 
   const isNewSpecies =
     fakeSpeciesId ? (await prisma.ownedPokemon.count({ where: { fakeSpeciesId } })) === 0 : (await prisma.ownedPokemon.count({ where: { pokemonId } })) === 0;
@@ -113,15 +119,18 @@ export async function createOwnedPokemon(formData: FormData) {
     );
   }
 
-  if (!fakeSpeciesId && game.pokedexId && !game.completionBonusAwarded) {
-    const species = await getPokedexServer(game.pokedexId);
+  if (!game.completionBonusAwarded) {
     const ownedDistinct = await prisma.ownedPokemon.findMany({
       where: { gameId },
-      select: { pokemonId: true },
-      distinct: ['pokemonId'],
+      select: { pokemonId: true, fakeSpeciesId: true },
     });
 
-    if (species.length > 0 && ownedDistinct.length >= species.length) {
+    const ownedKeys = new Set(ownedDistinct.map((item) => item.fakeSpeciesId ? `fake:${item.fakeSpeciesId}` : `pokemon:${item.pokemonId}`));
+    const requiredKeys = game.type === 'HACK_ROM'
+      ? new Set((game.hackRoom?.pokedexEntries ?? []).map((item) => item.fakeSpeciesId ? `fake:${item.fakeSpeciesId}` : `pokemon:${item.pokemonId}`))
+      : new Set((game.pokedexId ? await getPokedexServer(game.pokedexId) : []).map((item) => `pokemon:${item.id}`));
+
+    if (requiredKeys.size > 0 && [...requiredKeys].every((key) => ownedKeys.has(key))) {
       const completion = await prisma.game.updateMany({
         where: { id: gameId, completionBonusAwarded: false },
         data: { completionBonusAwarded: true },

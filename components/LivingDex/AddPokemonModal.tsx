@@ -15,6 +15,7 @@ interface Props {
   boxSlot: number;
   isHackRoom: boolean;
   initialSpecies: PokedexSpecies | null;
+  availableSpecies?: PokedexSpecies[];
   fakeSpecies?: { id: string; name: string; spriteUrl: string | null }[];
   onClose: () => void;
   onSaved?: () => void;
@@ -33,6 +34,7 @@ export default function AddPokemonModal({
   boxSlot,
   isHackRoom,
   initialSpecies,
+  availableSpecies = [],
   fakeSpecies = [],
   onClose,
   onSaved,
@@ -43,7 +45,7 @@ export default function AddPokemonModal({
   const [query, setQuery] = useState(initialSpecies?.name ?? '');
   const [selected, setSelected] = useState<SpeciesLite | null>(
     initialSpecies
-      ? { id: initialSpecies.id, name: initialSpecies.name }
+      ? { id: initialSpecies.id, name: initialSpecies.name, fakeSpeciesId: initialSpecies.fakeSpeciesId ?? undefined, spriteUrl: initialSpecies.spriteUrl }
       : null,
   );
   const [saving, setSaving] = useState(false);
@@ -60,6 +62,15 @@ export default function AddPokemonModal({
 
   // Carrega a lista de espécies uma vez
   useEffect(() => {
+    if (isHackRoom) {
+      setAllSpecies(availableSpecies.map((item) => ({
+        id: item.id,
+        name: item.name,
+        fakeSpeciesId: item.fakeSpeciesId ?? undefined,
+        spriteUrl: item.spriteUrl,
+      })));
+      return;
+    }
     let isMounted = true;
     getPokemonList()
       .then((res) => {
@@ -78,7 +89,7 @@ export default function AddPokemonModal({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [availableSpecies, isHackRoom]);
 
   // Bloqueia o scroll do body enquanto o modal estiver aberto
   useEffect(() => {
@@ -107,7 +118,7 @@ export default function AddPokemonModal({
   const filtered = useMemo(() => {
     if (query.trim().length < 2 || selected) return [];
     const q = query.toLowerCase().trim();
-    const native = allSpecies.filter((s) => s.name.includes(q));
+    const native = allSpecies.filter((s) => !s.fakeSpeciesId && s.name.includes(q));
     const fakes = isHackRoom ? fakeSpecies.filter((s) => s.name.toLowerCase().includes(q)).map((s) => ({ id: 0, name: s.name, fakeSpeciesId: s.id, spriteUrl: s.spriteUrl })) : [];
     return [...fakes, ...native].slice(0, 12);
   }, [allSpecies, query, selected, fakeSpecies, isHackRoom]);

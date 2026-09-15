@@ -4,23 +4,27 @@ import { useDraggable } from '@dnd-kit/core';
 import { getOfficialArtwork } from '@/lib/pokeapi/sprite-variants';
 
 interface Props {
-  id: number;
+  id: string;
+  pokemonId: number;
   entryNumber: number;
   name: string;
   owned: boolean;
+  spriteUrl?: string | null;
   onClick: () => void;
 }
 
 export default function PokedexCard({
   id,
+  pokemonId,
   entryNumber,
   name,
   owned,
+  spriteUrl,
   onClick,
 }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id });
 
-  const sprite = getOfficialArtwork(id);
+  const sprite = spriteUrl ?? getOfficialArtwork(pokemonId);
 
   return (
     <button

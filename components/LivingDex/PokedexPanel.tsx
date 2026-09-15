@@ -7,7 +7,7 @@ import type { PokedexSpecies } from '@/lib/pokeapi/server-pokedex';
 
 interface Props {
   species: PokedexSpecies[];
-  ownedIds: Set<number>;
+  ownedIds: Set<string>;
   pokedexDescription: string;
   onSpeciesClick: (species: PokedexSpecies) => void;
 }
@@ -24,8 +24,7 @@ export default function PokedexPanel({
   const reduceMotion = useReducedMotion();
   const totalPages = Math.max(1, Math.ceil(species.length / PAGE_SIZE));
   const slice = species.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const ownedCount = species.filter((item) => ownedIds.has(item.id)).length;
-
+  const speciesKey = (item: PokedexSpecies) => item.fakeSpeciesId ? `fake:${item.fakeSpeciesId}` : `pokemon:${item.id}`;
   function goTo(next: number) {
     setPage(Math.max(0, Math.min(totalPages - 1, next)));
   }
@@ -53,10 +52,12 @@ export default function PokedexPanel({
               }}
             >
               <PokedexCard
-                id={item.id}
+                id={speciesKey(item)}
+                pokemonId={item.id}
                 entryNumber={item.entryNumber}
                 name={item.name}
-                owned={ownedIds.has(item.id)}
+                owned={ownedIds.has(speciesKey(item))}
+                spriteUrl={item.spriteUrl}
                 onClick={() => onSpeciesClick(item)}
               />
             </motion.div>

@@ -10,7 +10,8 @@ import PokemonAtmosphere from '@/components/Pokemons/PokemonAtmosphere';
 
 export default async function PokemonsPage() {
   const owned = await prisma.ownedPokemon.findMany({
-    orderBy: { createdAt: 'desc' },
+    // Número nacional primeiro; duplicatas da mesma espécie ficam lado a lado.
+    orderBy: [{ pokemonId: 'asc' }, { createdAt: 'asc' }],
   });
 
   // Resolve apenas sprites customizados de hack room

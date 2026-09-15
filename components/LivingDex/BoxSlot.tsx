@@ -12,6 +12,7 @@ interface Props {
     id: string;
     pokemonId: number;
     name: string;
+    nickname: string | null;
     level: number;
     spriteUrl: string | null;
     spriteVariant: string | null;
@@ -74,7 +75,7 @@ export default function BoxSlot({
       whileTap={{ scale: 0.97 }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
       className="box-slot box-slot-filled"
-      aria-label={`${owned.name} nível ${owned.level}`}
+      aria-label={`${owned.name}${owned.nickname ? `, apelido ${owned.nickname}` : ''}, nível ${owned.level}`}
     >
       {/* Holo sweep contínuo */}
       <span className="box-slot-holo" aria-hidden="true" />
@@ -106,6 +107,9 @@ export default function BoxSlot({
         {/* Info */}
         <div className="box-slot-info">
           <span className="box-slot-name">{owned.name}</span>
+          {owned.nickname && owned.nickname.toLocaleLowerCase() !== owned.name.toLocaleLowerCase() && (
+            <span className="box-slot-nickname">{owned.nickname}</span>
+          )}
           <span className="box-slot-level">
             <span className="box-slot-level-label">LV</span>
             <span className="box-slot-level-value">

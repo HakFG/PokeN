@@ -4,10 +4,15 @@ import { useState } from 'react';
 import EditModal from './EditModal';
 
 interface Props {
+  gameId: string;
   trainerCardId: string;
   trainerName: string;
   characterSpriteUrl: string | null;
+  trainerPresetId: string | null;
   playtime: string | null;
+  gameStatus: 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED';
+  isCurrentlyPlaying: boolean;
+  startedAt: Date | string | null;
   showcase: {
     slot: number;
     pokemonId: number;
@@ -23,10 +28,15 @@ interface Props {
 }
 
 export default function EditButton({
+  gameId,
   trainerCardId,
   trainerName,
   characterSpriteUrl,
+  trainerPresetId,
   playtime,
+  gameStatus,
+  isCurrentlyPlaying,
+  startedAt,
   showcase,
   badges,
 }: Props) {
@@ -62,11 +72,15 @@ export default function EditButton({
 
       {open && (
         <EditModal
-          gameId=""
+          gameId={gameId}
           trainerCardId={trainerCardId}
           initialName={trainerName}
           initialSpriteUrl={characterSpriteUrl}
+          initialTrainerPresetId={trainerPresetId}
           initialPlaytime={playtime}
+          initialGameStatus={gameStatus}
+          initialIsCurrentlyPlaying={isCurrentlyPlaying}
+          initialStartedAt={startedAt}
           initialShowcase={showcase}
           initialBadges={badges}
           onClose={() => setOpen(false)}

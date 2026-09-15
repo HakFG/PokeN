@@ -53,7 +53,7 @@ export default async function QualModoPage({
             labelDelay={0.75}
             floatDelay={0}
           />
-          {game.type === 'HACK_ROM' && <ModeCard href={`/jogos/${gameId}/hackroom`} label="HACKROOM" imageUrl="/images/modo/living-dex.png" alt="Ficha da Hackroom" direction="right" aura={{ primary: '#fbbf24', secondary: '#8B5CF6' }} entranceDelay={0.6} pokemonDelay={0.7} labelDelay={0.85} floatDelay={2.4} />}
+          {game.type === 'HACK_ROM' && <ModeCard href={`/jogos/${gameId}/hackroom`} label="HACKROOM" imageUrl="/images/Krookodile.png" alt="Krookodile da Hackroom" direction="right" aura={{ primary: '#fbbf24', secondary: '#8B5CF6' }} entranceDelay={0.6} pokemonDelay={0.7} labelDelay={0.85} floatDelay={2.4} />}
           <ModeCard
             href={`/jogos/${gameId}/living-dex`}
             label="LIVING DEX"

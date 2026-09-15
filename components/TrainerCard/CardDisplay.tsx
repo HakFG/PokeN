@@ -14,6 +14,7 @@ interface Stats {
   dexPercent: number;
   isDexComplete: boolean;
   status: string;
+  isCurrentlyPlaying: boolean;
   startedAt: Date | string | null;
   completedAt: Date | string | null;
 }
@@ -64,6 +65,7 @@ export default function CardDisplay({
           {/* Faixa superior: Trainer ID + Shiny counter */}
           <div className="flex shrink-0 items-center justify-between px-1">
             <TrainerIdBadge trainerIdCode={trainerIdCode} />
+            <GameStatusBadge status={stats.status} isCurrentlyPlaying={stats.isCurrentlyPlaying} startedAt={stats.startedAt} />
             <ShinyCounter count={stats.shinyCount} />
           </div>
 
@@ -118,6 +120,8 @@ export default function CardDisplay({
           {/* Rodapé: datas + playtime */}
           <div className="shrink-0">
             <CardFooterInfo
+              status={stats.status}
+              isCurrentlyPlaying={stats.isCurrentlyPlaying}
               startedAt={stats.startedAt}
               completedAt={stats.completedAt}
               playtime={playtime}
@@ -127,4 +131,26 @@ export default function CardDisplay({
       </TrainerCardFrame>
     </DexCompleteFrame>
   );
+}
+
+function GameStatusBadge({
+  status,
+  isCurrentlyPlaying,
+  startedAt,
+}: {
+  status: string;
+  isCurrentlyPlaying: boolean;
+  startedAt: Date | string | null;
+}) {
+  const state = status === 'COMPLETED'
+    ? { label: 'Concluído', classes: 'border-emerald-300/50 bg-emerald-300/15 text-emerald-100' }
+    : status === 'DROPPED'
+      ? { label: 'Pausado', classes: 'border-amber-300/40 bg-amber-300/10 text-amber-100' }
+      : isCurrentlyPlaying
+        ? { label: 'Jogando agora', classes: 'border-cyan-300/55 bg-cyan-300/15 text-cyan-100' }
+        : startedAt
+          ? { label: 'Em progresso', classes: 'border-violet-300/45 bg-violet-300/10 text-violet-100' }
+          : { label: 'Não iniciado', classes: 'border-white/20 bg-white/5 text-white/65' };
+
+  return <span className={`rounded-full border px-3 py-1 font-display text-[9px] font-black uppercase tracking-[0.16em] ${state.classes}`}>{state.label}</span>;
 }
