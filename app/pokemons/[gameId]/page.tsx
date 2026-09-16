@@ -1,4 +1,6 @@
 // app/pokemons/[gameId]/page.tsx
+export const dynamic = 'force-dynamic';
+
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import { prisma } from '@/lib/prisma';

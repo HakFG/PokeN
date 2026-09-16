@@ -1,4 +1,6 @@
 // app/pokemons/page.tsx
+export const dynamic = 'force-dynamic';
+
 import Header from '@/components/Header';
 import PokemonHomeBanner from '@/components/PokemonHomeBanner';
 import PokemonGrid, { type PokemonGridEntry } from '@/components/PokemonGrid';
@@ -11,6 +13,7 @@ import PokemonAtmosphere from '@/components/Pokemons/PokemonAtmosphere';
 export default async function PokemonsPage() {
   const [owned, games] = await Promise.all([
     prisma.ownedPokemon.findMany({
+      include: { fakeSpecies: true },
       // Número nacional primeiro; duplicatas da mesma espécie ficam lado a lado.
       orderBy: [{ pokemonId: 'asc' }, { createdAt: 'asc' }],
     }),
@@ -22,16 +25,24 @@ export default async function PokemonsPage() {
 
   // Resolve apenas sprites customizados de hack room
   const spriteMap = await resolveSpritesBatch(
-    owned.map((p) => ({ pokemonId: p.pokemonId, gameId: p.gameId })),
+    owned
+      .filter((p) => p.pokemonId > 0)
+      .map((p) => ({ pokemonId: p.pokemonId, gameId: p.gameId })),
   );
 
   const gameMap = new Map(games.map((g) => [g.id, g.name]));
 
   const entries: PokemonGridEntry[] = await Promise.all(
     owned.map(async (p) => {
-      const detail = await getPokemonServer(p.pokemonId).catch(() => null);
+      const isFakemon = Boolean(p.fakeSpecies);
+      const detail = isFakemon || p.pokemonId <= 0 ? null : await getPokemonServer(p.pokemonId).catch(() => null);
       const gameIds = Array.from(new Set([p.gameId, ...(p.extraGameIds || [])]));
       const gameNames = gameIds.map((id) => gameMap.get(id) ?? id);
+
+      const resolvedName = p.fakeSpecies?.name ?? detail?.name ?? `#${p.pokemonId}`;
+      const resolvedTypes = p.fakeSpecies?.types ?? detail?.types.map((type) => type.type.name) ?? ['normal'];
+      const resolvedColor = detail ? getTypeColor(detail.types) : '#22D3EE';
+      const resolvedSprite = p.fakeSpecies?.spriteUrl ?? spriteMap.get(`${p.pokemonId}:${p.gameId}`) ?? null;
 
       return {
         id: p.id,
@@ -43,14 +54,14 @@ export default async function PokemonsPage() {
         pokemonId: p.pokemonId,
         nickname: p.nickname,
         trainerName: p.trainerName,
-        name: detail?.name ?? `#${p.pokemonId}`,
+        name: resolvedName,
         level: p.level,
         moveset: p.moveset,
         isShiny: p.isShiny,
-        typeNames: detail?.types.map((type) => type.type.name) ?? ['normal'],
-        typeName: detail?.types[0]?.type.name ?? 'normal',
-        typeColor: detail ? getTypeColor(detail.types) : '#22D3EE',
-        spriteUrl: spriteMap.get(`${p.pokemonId}:${p.gameId}`) ?? null,
+        typeNames: resolvedTypes,
+        typeName: resolvedTypes[0] ?? 'normal',
+        typeColor: resolvedColor,
+        spriteUrl: resolvedSprite,
         spriteVariant: p.spriteVariant,
       };
     }),

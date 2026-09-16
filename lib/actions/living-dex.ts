@@ -144,6 +144,8 @@ export async function createOwnedPokemon(formData: FormData) {
     }
   }
 
+  revalidatePath('/pokemons');
+  revalidatePath(`/pokemons/${gameId}`);
   revalidatePath(`/jogos/${gameId}/living-dex`);
 
   return { ok: true as const, xp: mergeXpResults(xpResults) };
@@ -152,6 +154,8 @@ export async function createOwnedPokemon(formData: FormData) {
 export async function deleteOwnedPokemon(id: string, gameId: string) {
   if (!id || !gameId) throw new Error('Dados incompletos');
   await prisma.ownedPokemon.delete({ where: { id } });
+  revalidatePath('/pokemons');
+  revalidatePath(`/pokemons/${gameId}`);
   revalidatePath(`/jogos/${gameId}/living-dex`);
 }
 
@@ -196,6 +200,8 @@ export async function updateOwnedPokemon(
     data: updateData,
   });
 
+  revalidatePath('/pokemons');
+  revalidatePath(`/pokemons/${gameId}`);
   revalidatePath(`/jogos/${gameId}/living-dex`);
   return { ok: true as const };
 }
