@@ -21,13 +21,43 @@ export default async function LivingDexPage({
   });
   if (!game) notFound();
 
-  const [owned, defaultSpecies] = await Promise.all([
+  const [ownedRaw, defaultSpecies] = await Promise.all([
     prisma.ownedPokemon.findMany({
-      where: { gameId },
+      where: {
+        OR: [
+          { gameId },
+          { extraGameIds: { has: gameId } },
+        ],
+      },
       orderBy: [{ boxNumber: 'asc' }, { boxSlot: 'asc' }],
     }),
     game.type === 'HACK_ROM' ? Promise.resolve([]) : getPokedexServer(game.pokedexId),
   ]);
+
+  // Normalização de slots (1 a 12 por box) para que espécimes vinculados (extraGameIds)
+  // apareçam nesta Living Dex sem colidir de posição com os já presentes.
+  const occupiedSlots = new Set<string>();
+  const owned = ownedRaw.map((p) => {
+    let box = Math.max(1, p.boxNumber);
+    let slot = p.boxSlot;
+    if (slot > 12 || occupiedSlots.has(`${box}:${slot}`)) {
+      box = 1;
+      slot = 1;
+      while (occupiedSlots.has(`${box}:${slot}`)) {
+        slot++;
+        if (slot > 12) {
+          box++;
+          slot = 1;
+        }
+      }
+    }
+    occupiedSlots.add(`${box}:${slot}`);
+    return {
+      ...p,
+      boxNumber: box,
+      boxSlot: slot,
+    };
+  });
 
   const species = game.type === 'HACK_ROM'
     ? game.hackRoom!.pokedexEntries

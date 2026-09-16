@@ -123,7 +123,12 @@ export async function createOwnedPokemon(formData: FormData) {
 
   if (!game.completionBonusAwarded) {
     const ownedDistinct = await prisma.ownedPokemon.findMany({
-      where: { gameId },
+      where: {
+        OR: [
+          { gameId },
+          { extraGameIds: { has: gameId } },
+        ],
+      },
       select: { pokemonId: true, fakeSpeciesId: true },
     });
 
@@ -153,7 +158,35 @@ export async function createOwnedPokemon(formData: FormData) {
 
 export async function deleteOwnedPokemon(id: string, gameId: string) {
   if (!id || !gameId) throw new Error('Dados incompletos');
-  await prisma.ownedPokemon.delete({ where: { id } });
+
+  const existing = await prisma.ownedPokemon.findUnique({
+    where: { id },
+  });
+  if (!existing) return;
+
+  if (existing.extraGameIds.includes(gameId)) {
+    // Apenas desvincula deste jogo, mantendo nos outros jogos e na Home
+    await prisma.ownedPokemon.update({
+      where: { id },
+      data: {
+        extraGameIds: existing.extraGameIds.filter((gid) => gid !== gameId),
+      },
+    });
+  } else if (existing.gameId === gameId && existing.extraGameIds.length > 0) {
+    // Promove o primeiro jogo extra para principal e mantém os demais
+    const [newPrimary, ...remaining] = existing.extraGameIds;
+    await prisma.ownedPokemon.update({
+      where: { id },
+      data: {
+        gameId: newPrimary,
+        extraGameIds: remaining,
+      },
+    });
+  } else {
+    // Se era o único jogo, solta/deleta o Pokémon por completo
+    await prisma.ownedPokemon.delete({ where: { id } });
+  }
+
   revalidatePath('/pokemons');
   revalidatePath(`/pokemons/${gameId}`);
   revalidatePath(`/jogos/${gameId}/living-dex`);

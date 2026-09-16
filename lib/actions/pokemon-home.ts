@@ -47,7 +47,7 @@ export async function addPokemonHomeAction(input: AddPokemonInput) {
   let boxSlot = 1;
   while (slotSet.has(`${boxNumber}:${boxSlot}`)) {
     boxSlot++;
-    if (boxSlot > 30) {
+    if (boxSlot > 12) {
       boxNumber++;
       boxSlot = 1;
     }
@@ -197,26 +197,36 @@ export interface TransferPokemonInput {
   pokemonId: string; // id do OwnedPokemon (UUID no banco)
   targetGameId: string;
   targetBoxNumber?: number; // padrão 1
+  mode?: 'link' | 'move'; // 'link' = vincula na Living Dex (mantém em ambos) | 'move' = transfere de jogo
 }
 
 export async function transferPokemonGameAction(input: TransferPokemonInput) {
-  const { pokemonId: id, targetGameId, targetBoxNumber = 1 } = input;
+  const { pokemonId: id, targetGameId, targetBoxNumber = 1, mode = 'link' } = input;
   if (!id || !targetGameId) throw new Error('ID do Pokémon e jogo de destino são obrigatórios.');
 
   const pokemon = await prisma.ownedPokemon.findUnique({
     where: { id },
   });
   if (!pokemon) throw new Error('Pokémon não encontrado.');
-  if (pokemon.gameId === targetGameId) throw new Error('O Pokémon já está associado a este jogo.');
+  if (mode === 'move' && pokemon.gameId === targetGameId) {
+    throw new Error('O Pokémon já tem este jogo como origem.');
+  }
 
   const targetGame = await prisma.game.findUnique({
     where: { id: targetGameId },
   });
   if (!targetGame) throw new Error('Jogo de destino não encontrado.');
 
-  // Encontra slot livre no jogo e na box de destino
+  const previousGameId = pokemon.gameId;
+
+  // Encontra slot livre no jogo e na box de destino (12 slots por box na Living Dex)
   const occupiedSlots = await prisma.ownedPokemon.findMany({
-    where: { gameId: targetGameId },
+    where: {
+      OR: [
+        { gameId: targetGameId },
+        { extraGameIds: { has: targetGameId } },
+      ],
+    },
     select: { boxNumber: true, boxSlot: true },
   });
   const occupiedSet = new Set(occupiedSlots.map((s) => `${s.boxNumber}:${s.boxSlot}`));
@@ -225,28 +235,46 @@ export async function transferPokemonGameAction(input: TransferPokemonInput) {
   let slot = 1;
   while (occupiedSet.has(`${box}:${slot}`)) {
     slot++;
-    if (slot > 30) {
+    if (slot > 12) {
       box++;
       slot = 1;
     }
   }
 
-  const previousGameId = pokemon.gameId;
-
-  const transferred = await prisma.ownedPokemon.update({
-    where: { id },
-    data: {
-      gameId: targetGameId,
-      boxNumber: box,
-      boxSlot: slot,
-    },
-  });
+  let transferred;
+  if (mode === 'move') {
+    const cleanExtraGameIds = (pokemon.extraGameIds || []).filter((gid) => gid !== targetGameId);
+    transferred = await prisma.ownedPokemon.update({
+      where: { id },
+      data: {
+        gameId: targetGameId,
+        extraGameIds: cleanExtraGameIds,
+        boxNumber: box,
+        boxSlot: slot,
+      },
+    });
+  } else {
+    // Modo padrão 'link': Adiciona aos jogos vinculados para aparecer na Living Dex sem duplicar na Home
+    const cleanExtraGameIds = Array.from(
+      new Set([...(pokemon.extraGameIds || []), targetGameId].filter((gid) => gid !== pokemon.gameId))
+    );
+    transferred = await prisma.ownedPokemon.update({
+      where: { id },
+      data: {
+        extraGameIds: cleanExtraGameIds,
+      },
+    });
+  }
 
   revalidatePath('/pokemons');
   revalidatePath(`/pokemons/${previousGameId}`);
   revalidatePath(`/pokemons/${targetGameId}`);
+  for (const gid of transferred.extraGameIds || []) {
+    revalidatePath(`/pokemons/${gid}`);
+    revalidatePath(`/jogos/${gid}/living-dex`);
+  }
   revalidatePath(`/jogos/${previousGameId}/living-dex`);
   revalidatePath(`/jogos/${targetGameId}/living-dex`);
 
-  return { ok: true, pokemon: transferred, targetBox: box, targetSlot: slot };
+  return { ok: true, pokemon: transferred, targetBox: box, targetSlot: slot, mode };
 }

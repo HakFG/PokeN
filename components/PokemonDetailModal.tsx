@@ -107,13 +107,28 @@ export default function PokemonDetailModal(props: PokemonDetailModalProps) {
     setIsShiny(initialEntry.isShiny);
   }, [initialEntry]);
 
-  // --- Transfer tab state ---
-  const availableGames = games.filter((g) => g.id !== current.gameId);
+  // --- Transfer / Enviar tab state ---
+  const currentAssignedIds = useMemo(() => {
+    return new Set(
+      current.gameIds && current.gameIds.length > 0 ? current.gameIds : [current.gameId]
+    );
+  }, [current.gameIds, current.gameId]);
+
+  const availableGames = useMemo(() => {
+    return games.filter((g) => !currentAssignedIds.has(g.id));
+  }, [games, currentAssignedIds]);
+
   const [targetGameId, setTargetGameId] = useState(availableGames[0]?.id ?? '');
   const [targetBoxNumber, setTargetBoxNumber] = useState(1);
   const [transferring, setTransferring] = useState(false);
   const [transferError, setTransferError] = useState<string | null>(null);
   const [transferSuccess, setTransferSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (availableGames.length > 0 && (!targetGameId || !availableGames.some((g) => g.id === targetGameId))) {
+      setTargetGameId(availableGames[0].id);
+    }
+  }, [availableGames, targetGameId]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -209,7 +224,7 @@ export default function PokemonDetailModal(props: PokemonDetailModalProps) {
     }
   }
 
-  async function handleTransfer() {
+  async function handleTransfer(mode: 'link' | 'move' = 'link') {
     if (!current.id || !targetGameId) return;
     setTransferring(true);
     setTransferError(null);
@@ -219,17 +234,39 @@ export default function PokemonDetailModal(props: PokemonDetailModalProps) {
         pokemonId: current.id,
         targetGameId,
         targetBoxNumber,
+        mode,
       });
       const targetName = games.find((g) => g.id === targetGameId)?.name ?? 'jogo selecionado';
-      const box = (result as { boxNumber?: number } | undefined)?.boxNumber ?? targetBoxNumber;
-      const slot = (result as { boxSlot?: number } | undefined)?.boxSlot;
-      setTransferSuccess(
-        `Transferido com sucesso para ${targetName} • Box ${box}${slot ? ` (Slot ${slot})` : ''}!`
-      );
-      setCurrent((prev) => ({ ...prev, gameId: targetGameId, boxNumber: box, boxSlot: slot ?? prev.boxSlot }));
-      setTimeout(() => onClose(), 1400);
+      const box = (result as { targetBox?: number; boxNumber?: number } | undefined)?.targetBox ?? targetBoxNumber;
+      const slot = (result as { targetSlot?: number; boxSlot?: number } | undefined)?.targetSlot;
+
+      if (mode === 'link') {
+        const nextGameIds = Array.from(new Set([...(current.gameIds || [current.gameId]), targetGameId]));
+        setTransferSuccess(
+          `Enviado com sucesso para a Living Dex de ${targetName}! O espécime agora está ativo em ambos os jogos.`
+        );
+        setCurrent((prev) => ({
+          ...prev,
+          gameIds: nextGameIds,
+          gameNames: nextGameIds.map((id) => games.find((g) => g.id === id)?.name ?? id),
+        }));
+      } else {
+        const nextGameIds = [targetGameId, ...(current.gameIds || []).filter((id) => id !== current.gameId && id !== targetGameId)];
+        setTransferSuccess(
+          `Transferido com sucesso para ${targetName} • Box ${box}${slot ? ` (Slot ${slot})` : ''}!`
+        );
+        setCurrent((prev) => ({
+          ...prev,
+          gameId: targetGameId,
+          gameIds: nextGameIds,
+          gameNames: nextGameIds.map((id) => games.find((g) => g.id === id)?.name ?? id),
+          boxNumber: box,
+          boxSlot: slot ?? prev.boxSlot,
+        }));
+      }
+      setTimeout(() => onClose(), 1500);
     } catch (err) {
-      setTransferError(err instanceof Error ? err.message : 'Não foi possível transferir o Pokémon.');
+      setTransferError(err instanceof Error ? err.message : 'Não foi possível enviar o Pokémon.');
     } finally {
       setTransferring(false);
     }
@@ -363,7 +400,7 @@ export default function PokemonDetailModal(props: PokemonDetailModalProps) {
           <div className="pokemon-modal-tabs relative mt-5 grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-black/50 p-1">
             <TabButton label="Visão Geral" active={tab === 'view'} onClick={() => setTab('view')} />
             <TabButton label="Editar" active={tab === 'edit'} onClick={() => setTab('edit')} />
-            <TabButton label="Transferir" active={tab === 'transfer'} onClick={() => setTab('transfer')} />
+            <TabButton label="Enviar / Transferir" active={tab === 'transfer'} onClick={() => setTab('transfer')} />
           </div>
 
           <div className="pokemon-modal-body mt-5">
@@ -585,7 +622,7 @@ export default function PokemonDetailModal(props: PokemonDetailModalProps) {
               <div className="space-y-4">
                 {availableGames.length === 0 ? (
                   <p className="rounded-xl border border-white/10 bg-black/40 p-4 text-center text-sm text-slate-400">
-                    Não há outros jogos cadastrados disponíveis para transferência.
+                    Este Pokémon já está vinculado e presente na Living Dex de todos os jogos cadastrados.
                   </p>
                 ) : (
                   <>
@@ -602,26 +639,38 @@ export default function PokemonDetailModal(props: PokemonDetailModalProps) {
                       />
                     </div>
 
-                    <Field label="Box de Destino">
-                      <input
-                        type="number"
-                        min={1}
-                        value={targetBoxNumber}
-                        onChange={(e) => setTargetBoxNumber(Math.max(1, Number(e.target.value)))}
-                        className="pokemon-modal-input w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-sm text-slate-100 outline-none transition focus:border-cyan-400/60 focus:bg-black/60 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-                      />
-                    </Field>
+                    <div className="rounded-xl border border-cyan-400/20 bg-cyan-950/30 p-3 text-xs text-slate-300">
+                      <p className="font-semibold text-cyan-200 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22D3EE]" />
+                        Sincronização com a Living Dex
+                      </p>
+                      <p className="mt-1 text-slate-400 leading-relaxed">
+                        Ao enviar, o Pokémon passará a constar na Living Dex do jogo selecionado e continuará sendo uma única entidade no seu Home sem se duplicar.
+                      </p>
+                    </div>
 
                     {transferError && <p className="text-sm font-semibold text-rose-400">{transferError}</p>}
                     {transferSuccess && <p className="text-sm font-semibold text-emerald-400">{transferSuccess}</p>}
 
-                    <button
-                      onClick={handleTransfer}
-                      disabled={transferring || !targetGameId}
-                      className="relative w-full overflow-hidden rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/25 to-yellow-600/25 py-3 font-bold text-amber-100 shadow-[0_0_20px_rgba(251,191,36,0.25)] transition hover:from-amber-500/40 hover:to-yellow-600/40 hover:shadow-[0_0_25px_rgba(251,191,36,0.4)] disabled:opacity-50"
-                    >
-                      {transferring ? 'Transferindo...' : 'Transferir para este Jogo'}
-                    </button>
+                    <div className="space-y-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleTransfer('link')}
+                        disabled={transferring || !targetGameId}
+                        className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-cyan-400/70 bg-gradient-to-r from-cyan-500/30 via-blue-500/20 to-cyan-500/30 py-3 text-xs font-black uppercase tracking-wider text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.3)] transition hover:border-cyan-300 hover:shadow-[0_0_35px_rgba(34,211,238,0.5)] disabled:opacity-50"
+                      >
+                        <span>{transferring ? 'Enviando...' : 'Enviar para Living Dex (Vincular)'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleTransfer('move')}
+                        disabled={transferring || !targetGameId}
+                        className="w-full rounded-xl border border-white/10 bg-black/40 py-2.5 font-mono text-[11px] font-semibold text-slate-400 hover:border-amber-400/40 hover:text-amber-200 transition disabled:opacity-50"
+                      >
+                        Mover Origem Definitivamente
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
