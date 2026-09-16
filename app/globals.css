@@ -4849,3 +4849,502 @@ h4,
   box-shadow: 0 8px 30px rgba(251, 191, 36, 0.55);
 }
 
+/* ============================================================== */
+/* PokeN — Control Bar & Filtros (Adaptado & Enriquecido)         */
+/* ============================================================== */
+
+.pokemon-control-bar {
+  background: linear-gradient(180deg, rgba(16, 11, 29, 0.96), rgba(11, 7, 21, 0.94)) !important;
+  border: 1px solid rgba(34, 211, 238, 0.22) !important;
+  box-shadow: 0 10px 32px -8px rgba(0, 0, 0, 0.65), 0 0 24px -6px rgba(34, 211, 238, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.pokemon-search-input,
+.pokemon-select,
+.pokemon-modal-select,
+.pokemon-modal-input {
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #f8fafc !important;
+  transition: border-color 180ms ease-out, box-shadow 180ms ease-out, background-color 180ms ease-out, transform 180ms ease-out;
+}
+
+.pokemon-search-input:hover,
+.pokemon-select:hover,
+.pokemon-modal-select:hover,
+.pokemon-modal-input:hover {
+  border-color: rgba(34, 211, 238, 0.4) !important;
+  background-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+.pokemon-search-input:focus,
+.pokemon-select:focus,
+.pokemon-modal-select:focus,
+.pokemon-modal-input:focus {
+  border-color: #22d3ee !important;
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.25), 0 0 18px rgba(34, 211, 238, 0.2) !important;
+}
+
+.pokemon-select,
+.pokemon-modal-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2322D3EE' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 14px !important;
+  padding-right: 36px !important;
+  cursor: pointer;
+}
+
+.pokemon-add-modal-card .pokemon-modal-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23FBBF24' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+.pokemon-add-modal-card .pokemon-modal-select:focus,
+.pokemon-add-modal-card .pokemon-modal-input:focus {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25), 0 0 18px rgba(251, 191, 36, 0.2) !important;
+}
+
+.pokemon-select option,
+.pokemon-modal-select option {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  padding: 8px !important;
+}
+
+.pokemon-shiny-toggle {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #cbd5e1 !important;
+  transition: all 200ms ease-out !important;
+}
+
+.pokemon-shiny-toggle:hover {
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  color: #fef08a !important;
+  background-color: rgba(251, 191, 36, 0.08) !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+.pokemon-shiny-toggle.pokemon-shiny-active {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.24), rgba(245, 158, 11, 0.16)) !important;
+  border-color: rgba(251, 191, 36, 0.75) !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 18px rgba(251, 191, 36, 0.45), inset 0 0 8px rgba(251, 191, 36, 0.25) !important;
+  animation: pokemon-shiny-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pokemon-shiny-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(251, 191, 36, 0.35), inset 0 0 6px rgba(251, 191, 36, 0.2); }
+  50% { box-shadow: 0 0 24px rgba(251, 191, 36, 0.6), inset 0 0 10px rgba(251, 191, 36, 0.4); }
+}
+
+.pokemon-add-trigger {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(245, 158, 11, 0.1)) !important;
+  border: 1px solid rgba(251, 191, 36, 0.6) !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transition: all 200ms ease-out !important;
+}
+
+.pokemon-add-trigger:hover {
+  transform: translateY(-2px) !important;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.2)) !important;
+  border-color: rgba(251, 191, 36, 0.95) !important;
+  box-shadow: 0 8px 24px -4px rgba(251, 191, 36, 0.55), 0 0 20px rgba(251, 191, 36, 0.4) !important;
+}
+
+.pokemon-add-trigger:active {
+  transform: translateY(0) scale(0.99) !important;
+}
+
+.pokemon-type-pill {
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  transition: all 180ms ease-out !important;
+}
+
+.pokemon-type-pill:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+  color: #f8fafc !important;
+}
+
+.pokemon-type-pill.pokemon-type-pill-active {
+  box-shadow: 0 0 14px -1px currentColor, inset 0 0 6px -2px currentColor !important;
+  font-weight: 700 !important;
+}
+
+.pokemon-clear-filters-btn {
+  transition: color 150ms ease-out, text-shadow 150ms ease-out;
+}
+
+.pokemon-clear-filters-btn:hover {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+}
+
+/* ============================================================== */
+/* PokeN — Modais Base & Janelas (Custom Scrollbars & Glow)       */
+/* ============================================================== */
+
+.pokemon-modal-overlay {
+  z-index: 2147483647 !important;
+  background: rgba(2, 6, 23, 0.82) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  animation: pokemon-modal-fade-in 200ms ease-out;
+}
+
+@keyframes pokemon-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pokemon-modal-window {
+  border-radius: 24px !important;
+  backdrop-filter: blur(24px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.2) !important;
+  animation: pokemon-modal-scale-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(34, 211, 238, 0.4) rgba(15, 23, 42, 0.8) !important;
+}
+
+@keyframes pokemon-modal-scale-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.pokemon-detail-modal-card {
+  background: linear-gradient(180deg, rgba(10, 15, 30, 0.97), rgba(4, 7, 18, 0.98)) !important;
+  border: 1px solid rgba(34, 211, 238, 0.35) !important;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.15), 0 0 50px -10px rgba(34, 211, 238, 0.25), 0 25px 70px -15px rgba(0, 0, 0, 0.9) !important;
+}
+
+.pokemon-add-modal-card {
+  background: linear-gradient(180deg, rgba(16, 12, 26, 0.97), rgba(8, 6, 15, 0.98)) !important;
+  border: 1px solid rgba(251, 191, 36, 0.35) !important;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.15), 0 0 50px -10px rgba(251, 191, 36, 0.25), 0 25px 70px -15px rgba(0, 0, 0, 0.9) !important;
+  scrollbar-color: rgba(251, 191, 36, 0.4) rgba(15, 23, 42, 0.8) !important;
+}
+
+/* Scrollbars customizadas sem a barra branca do Windows */
+.pokemon-modal-window::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.pokemon-modal-window::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-radius: 999px !important;
+  margin: 8px 0 !important;
+}
+
+.pokemon-modal-window::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.4) !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(34, 211, 238, 0.25) !important;
+}
+
+.pokemon-modal-window::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.8) !important;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.8) !important;
+}
+
+.pokemon-add-modal-card.pokemon-modal-window::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.4) !important;
+  border: 1px solid rgba(251, 191, 36, 0.25) !important;
+}
+
+.pokemon-add-modal-card.pokemon-modal-window::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.8) !important;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8) !important;
+}
+
+.pokemon-modal-close {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  transition: all 180ms ease-out !important;
+}
+
+.pokemon-modal-close:hover {
+  background: rgba(34, 211, 238, 0.12) !important;
+  border-color: rgba(34, 211, 238, 0.5) !important;
+  color: #22d3ee !important;
+  transform: rotate(90deg) scale(1.08) !important;
+}
+
+.pokemon-add-modal-card .pokemon-modal-close:hover {
+  background: rgba(251, 191, 36, 0.12) !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  color: #fbbf24 !important;
+}
+
+/* Baia holográfica e pedestal do sprite */
+.pokemon-modal-preview,
+.pokemon-modal-sprite-wrap {
+  position: relative !important;
+}
+
+.pokemon-modal-sprite-wrap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 140%;
+  height: 48px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(34, 211, 238, 0.4) 0%, rgba(34, 211, 238, 0.12) 45%, transparent 75%);
+  filter: blur(8px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pokemon-modal-sprite-wrap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 80%;
+  height: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.9), transparent);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+  border-radius: 999px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pokemon-add-modal-card .pokemon-modal-preview::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 140%;
+  height: 48px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.4) 0%, rgba(251, 191, 36, 0.12) 45%, transparent 75%);
+  filter: blur(8px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pokemon-add-modal-card .pokemon-modal-preview::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 75%;
+  height: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.9), transparent);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+  border-radius: 999px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pokemon-modal-sprite {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 20px rgba(34, 211, 238, 0.25));
+}
+
+.pokemon-add-modal-card .pokemon-modal-sprite {
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 20px rgba(251, 191, 36, 0.25));
+}
+
+.pokemon-modal-shiny-indicator {
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.9));
+  animation: pokemon-shiny-twinkle 1.6s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes pokemon-shiny-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.18); }
+}
+
+/* Abas */
+.pokemon-modal-tabs {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 14px !important;
+  padding: 4px !important;
+}
+
+.pokemon-modal-tab-btn {
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  transition: all 180ms ease-out !important;
+}
+
+.pokemon-modal-tab-btn.pokemon-tab-active {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(6, 182, 212, 0.15)) !important;
+  border: 1px solid rgba(34, 211, 238, 0.55) !important;
+  color: #e0f2fe !important;
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.35) !important;
+}
+
+.pokemon-modal-info-row {
+  background: rgba(15, 23, 42, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  transition: all 180ms ease-out !important;
+}
+
+.pokemon-modal-info-row:hover {
+  background: rgba(34, 211, 238, 0.06) !important;
+  border-color: rgba(34, 211, 238, 0.3) !important;
+  transform: translateX(2px) !important;
+}
+
+/* Slider de nível com knob cibernético */
+.pokemon-modal-slider {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  height: 6px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  outline: none !important;
+  cursor: pointer;
+}
+
+.pokemon-modal-slider::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: #22d3ee !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.35), 0 0 14px rgba(34, 211, 238, 0.8) !important;
+  cursor: pointer !important;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out !important;
+}
+
+.pokemon-modal-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2) !important;
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.5), 0 0 20px rgba(34, 211, 238, 1) !important;
+}
+
+.pokemon-modal-slider::-moz-range-thumb {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: #22d3ee !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.35), 0 0 14px rgba(34, 211, 238, 0.8) !important;
+  cursor: pointer !important;
+}
+
+.pokemon-add-modal-card .pokemon-modal-slider::-webkit-slider-thumb {
+  background: #fbbf24 !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35), 0 0 14px rgba(251, 191, 36, 0.8) !important;
+}
+
+.pokemon-add-modal-card .pokemon-modal-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 1) !important;
+}
+
+.pokemon-add-modal-card .pokemon-modal-slider::-moz-range-thumb {
+  background: #fbbf24 !important;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8) !important;
+}
+
+/* Botões de ação */
+.pokemon-modal-shiny-btn,
+.pokemon-modal-save-btn,
+.pokemon-modal-delete-btn,
+.pokemon-modal-transfer-btn,
+.pokemon-modal-submit-btn,
+.pokemon-modal-close-btn {
+  transition: all 180ms ease-out !important;
+}
+
+.pokemon-modal-shiny-btn {
+  background: rgba(15, 23, 42, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+}
+
+.pokemon-modal-shiny-btn:hover {
+  background: rgba(251, 191, 36, 0.08) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+}
+
+.pokemon-modal-save-btn {
+  border: 1px solid rgba(34, 211, 238, 0.6) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(6, 182, 212, 0.14)) !important;
+  color: #e0f2fe !important;
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.3) !important;
+}
+
+.pokemon-modal-save-btn:hover {
+  transform: translateY(-1px) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.32), rgba(6, 182, 212, 0.22)) !important;
+  box-shadow: 0 0 26px rgba(34, 211, 238, 0.6) !important;
+}
+
+.pokemon-modal-delete-btn {
+  border: 1px solid rgba(244, 63, 94, 0.6) !important;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.12)) !important;
+  color: #ffe4e6 !important;
+  box-shadow: 0 0 18px rgba(244, 63, 94, 0.3) !important;
+}
+
+.pokemon-modal-delete-btn:hover {
+  transform: translateY(-1px) !important;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.32), rgba(225, 29, 72, 0.2)) !important;
+  box-shadow: 0 0 26px rgba(244, 63, 94, 0.6) !important;
+}
+
+.pokemon-modal-transfer-btn,
+.pokemon-modal-submit-btn,
+.pokemon-modal-close-btn {
+  border: 1px solid rgba(251, 191, 36, 0.6) !important;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(245, 158, 11, 0.14)) !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 18px rgba(251, 191, 36, 0.3) !important;
+}
+
+.pokemon-modal-transfer-btn:hover,
+.pokemon-modal-submit-btn:hover,
+.pokemon-modal-close-btn:hover {
+  transform: translateY(-1px) !important;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.32), rgba(245, 158, 11, 0.22)) !important;
+  box-shadow: 0 0 26px rgba(251, 191, 36, 0.55) !important;
+}
+
+.pokemon-detail-modal-card .pokemon-modal-close-btn {
+  border: 1px solid rgba(34, 211, 238, 0.5) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(6, 182, 212, 0.1)) !important;
+  color: #e0f2fe !important;
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.25) !important;
+}
+
+.pokemon-detail-modal-card .pokemon-modal-close-btn:hover {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(6, 182, 212, 0.2)) !important;
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.5) !important;
+}
+
+.pokemon-modal-save-btn:active,
+.pokemon-modal-delete-btn:active,
+.pokemon-modal-transfer-btn:active,
+.pokemon-modal-submit-btn:active,
+.pokemon-modal-close-btn:active {
+  transform: scale(0.99) !important;
+}
+
+

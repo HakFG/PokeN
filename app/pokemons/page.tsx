@@ -25,16 +25,24 @@ export default async function PokemonsPage() {
     owned.map((p) => ({ pokemonId: p.pokemonId, gameId: p.gameId })),
   );
 
+  const gameMap = new Map(games.map((g) => [g.id, g.name]));
+
   const entries: PokemonGridEntry[] = await Promise.all(
     owned.map(async (p) => {
       const detail = await getPokemonServer(p.pokemonId).catch(() => null);
+      const gameIds = Array.from(new Set([p.gameId, ...(p.extraGameIds || [])]));
+      const gameNames = gameIds.map((id) => gameMap.get(id) ?? id);
+
       return {
         id: p.id,
         gameId: p.gameId,
+        gameIds,
+        gameNames,
         boxNumber: p.boxNumber,
         boxSlot: p.boxSlot,
         pokemonId: p.pokemonId,
         nickname: p.nickname,
+        trainerName: p.trainerName,
         name: detail?.name ?? `#${p.pokemonId}`,
         level: p.level,
         moveset: p.moveset,

@@ -54,6 +54,7 @@ export default async function LivingDexPage({
       speciesMap.get(pokemon.pokemonId) ??
       `#${pokemon.pokemonId}`,
     nickname: pokemon.nickname,
+    trainerName: pokemon.trainerName,
     level: pokemon.level,
     boxNumber: pokemon.boxNumber,
     boxSlot: pokemon.boxSlot,

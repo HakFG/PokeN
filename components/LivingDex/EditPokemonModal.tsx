@@ -13,6 +13,7 @@ interface Props {
     pokemonId: number;
     name: string;
     nickname: string | null;
+    trainerName?: string | null;
     level: number;
     boxNumber: number;
     boxSlot: number;
@@ -37,6 +38,7 @@ export default function EditPokemonModal({
   const [mounted, setMounted] = useState(false);
 
   const [nickname, setNickname] = useState(owned.nickname ?? '');
+  const [trainerName, setTrainerName] = useState(owned.trainerName ?? '');
   const [level, setLevel] = useState<number>(owned.level || 5);
   const [isShiny, setIsShiny] = useState<boolean>(owned.isShiny);
   const [saving, setSaving] = useState(false);
@@ -64,6 +66,7 @@ export default function EditPokemonModal({
     try {
       await updateOwnedPokemon(owned.id, gameId, {
         nickname: nickname.trim() || null,
+        trainerName: trainerName.trim() || null,
         level,
         isShiny,
       });
@@ -187,6 +190,23 @@ export default function EditPokemonModal({
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder={owned.name}
+                  className="add-pokemon-input"
+                  maxLength={24}
+                />
+              </div>
+
+              {/* Nome do Treinador */}
+              <div className="add-pokemon-field">
+                <label className="add-pokemon-label" htmlFor="edit-trainerName">
+                  <span className="add-pokemon-label-dot" aria-hidden="true" />
+                  Nome do Treinador
+                </label>
+                <input
+                  id="edit-trainerName"
+                  type="text"
+                  value={trainerName}
+                  onChange={(e) => setTrainerName(e.target.value)}
+                  placeholder="Ex: Red, May, etc. (Opcional)"
                   className="add-pokemon-input"
                   maxLength={24}
                 />

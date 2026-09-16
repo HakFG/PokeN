@@ -82,6 +82,7 @@ export async function getSpecies(id: number): Promise<PokemonSpecies> {
 export interface PokemonSearchResult {
   id: number;
   name: string;
+  iconUrl: string;
   animatedSpriteUrl: string;
   fallbackSpriteUrl: string;
 }
@@ -96,24 +97,62 @@ export function getArtworkSpriteUrl(id: number): string {
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 }
 
-/** Busca no cache do IndexedDB (mesma lista da Pokedex, sem nova rede). */
+/** Busca no cache do IndexedDB / PokeAPI com ranking por prefixo e suporte a número da Dex. */
 export async function searchPokemonByName(
   query: string,
 ): Promise<PokemonSearchResult[]> {
   const q = query.toLowerCase().trim();
-  if (q.length < 2) return [];
+  if (q.length < 1) return [];
 
-  const list = await getPokemonList();
-  return list.results
-    .map((r) => {
-      const id = Number(r.url.split('/').filter(Boolean).pop());
-      return {
-        id,
-        name: r.name,
-        animatedSpriteUrl: getAnimatedSpriteUrl(id),
-        fallbackSpriteUrl: getArtworkSpriteUrl(id),
-      };
-    })
-    .filter((p) => p.id > 0 && p.id <= 1025 && p.name.includes(q))
-    .slice(0, 12);
+  const isNumeric = /^\d+$/.test(q);
+  const numVal = isNumeric ? parseInt(q, 10) : null;
+
+  try {
+    const list = await getPokemonList();
+    const mapped = list.results
+      .map((r, index) => {
+        const idMatch = r.url.match(/\/pokemon\/(\d+)\//);
+        const id = idMatch ? parseInt(idMatch[1], 10) : index + 1;
+        return {
+          id,
+          name: r.name,
+          iconUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`,
+          animatedSpriteUrl: getAnimatedSpriteUrl(id),
+          fallbackSpriteUrl: getArtworkSpriteUrl(id),
+        };
+      })
+      .filter((p) => p.id > 0 && p.id <= 1025);
+
+    if (isNumeric && numVal !== null) {
+      // Prioridade: ID exato primeiro, depois ID que começa com os dígitos
+      return mapped
+        .filter((p) => String(p.id).startsWith(q))
+        .sort((a, b) => {
+          if (a.id === numVal) return -1;
+          if (b.id === numVal) return 1;
+          return a.id - b.id;
+        })
+        .slice(0, 10);
+    }
+
+    // Busca textual: começa com 'q' primeiro, depois contém 'q'
+    const startsWithMatches: PokemonSearchResult[] = [];
+    const containsMatches: PokemonSearchResult[] = [];
+
+    for (const p of mapped) {
+      const lower = p.name.toLowerCase();
+      if (lower.startsWith(q)) {
+        startsWithMatches.push(p);
+      } else if (lower.includes(q)) {
+        containsMatches.push(p);
+      }
+    }
+
+    startsWithMatches.sort((a, b) => a.name.localeCompare(b.name));
+    containsMatches.sort((a, b) => a.name.localeCompare(b.name));
+
+    return [...startsWithMatches, ...containsMatches].slice(0, 10);
+  } catch {
+    return [];
+  }
 }

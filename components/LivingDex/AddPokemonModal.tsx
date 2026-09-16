@@ -353,6 +353,21 @@ export default function AddPokemonModal({
                 </div>
               </div>
 
+              {/* Nome do Treinador */}
+              <div className="add-pokemon-field">
+                <label className="add-pokemon-label" htmlFor="trainerName">
+                  <span className="add-pokemon-label-dot" aria-hidden="true" />
+                  Nome do Treinador
+                </label>
+                <input
+                  id="trainerName"
+                  name="trainerName"
+                  type="text"
+                  placeholder="Ex: Red, May, etc. (Opcional)"
+                  className="add-pokemon-input"
+                />
+              </div>
+
               {/* Shiny */}
               <label className="add-pokemon-checkbox">
                 <input

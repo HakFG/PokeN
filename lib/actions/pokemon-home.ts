@@ -7,8 +7,10 @@ import { randomSpriteVariant } from '@/lib/pokeapi/sprite-variants';
 
 export interface AddPokemonInput {
   gameId: string;
+  extraGameIds?: string[];
   pokemonId: number;
   nickname?: string | null;
+  trainerName?: string | null;
   level?: number;
   isShiny?: boolean;
   spriteVariant?: string | null;
@@ -17,8 +19,10 @@ export interface AddPokemonInput {
 export async function addPokemonHomeAction(input: AddPokemonInput) {
   const {
     gameId,
+    extraGameIds = [],
     pokemonId,
     nickname = null,
+    trainerName = null,
     level = 5,
     isShiny = false,
     spriteVariant = isShiny ? 'official-artwork' : randomSpriteVariant(),
@@ -27,6 +31,10 @@ export async function addPokemonHomeAction(input: AddPokemonInput) {
   if (!gameId || !pokemonId || pokemonId < 1) {
     throw new Error('Jogo e Pokémon ID são obrigatórios.');
   }
+
+  const cleanExtraGameIds = Array.from(
+    new Set((extraGameIds || []).filter((id) => id && id !== gameId))
+  );
 
   // Encontra o próximo slot livre na box para evitar colisão na restrição unique [gameId, boxNumber, boxSlot]
   const occupiedSlots = await prisma.ownedPokemon.findMany({
@@ -48,8 +56,10 @@ export async function addPokemonHomeAction(input: AddPokemonInput) {
   const created = await prisma.ownedPokemon.create({
     data: {
       gameId,
+      extraGameIds: cleanExtraGameIds,
       pokemonId,
       nickname: nickname?.trim() || null,
+      trainerName: trainerName?.trim() || null,
       level: Math.min(100, Math.max(1, Math.round(level))),
       isShiny: Boolean(isShiny),
       boxNumber,
@@ -69,13 +79,19 @@ export async function addPokemonHomeAction(input: AddPokemonInput) {
 
   revalidatePath('/pokemons');
   revalidatePath(`/pokemons/${gameId}`);
+  for (const extraId of cleanExtraGameIds) {
+    revalidatePath(`/pokemons/${extraId}`);
+  }
   revalidatePath(`/jogos/${gameId}/living-dex`);
 
   return { ok: true, pokemon: created };
 }
 
 export interface UpdatePokemonInput {
+  gameId?: string;
+  extraGameIds?: string[];
   nickname?: string | null;
+  trainerName?: string | null;
   level?: number;
   isShiny?: boolean;
   spriteVariant?: string | null;
@@ -91,14 +107,32 @@ export async function updatePokemonHomeAction(id: string, input: UpdatePokemonIn
   if (!existing) throw new Error('Pokémon não encontrado.');
 
   const updateData: {
+    gameId?: string;
+    extraGameIds?: string[];
     nickname?: string | null;
+    trainerName?: string | null;
     level?: number;
     isShiny?: boolean;
     spriteVariant?: string | null;
   } = {};
 
+  const effectiveGameId = input.gameId ?? existing.gameId;
+
+  if (input.gameId !== undefined && input.gameId !== existing.gameId) {
+    updateData.gameId = input.gameId;
+  }
+
+  if (input.extraGameIds !== undefined) {
+    updateData.extraGameIds = Array.from(
+      new Set((input.extraGameIds || []).filter((gid) => gid && gid !== effectiveGameId))
+    );
+  }
+
   if (input.nickname !== undefined) {
     updateData.nickname = input.nickname?.trim() || null;
+  }
+  if (input.trainerName !== undefined) {
+    updateData.trainerName = input.trainerName?.trim() || null;
   }
   if (input.level !== undefined) {
     updateData.level = Math.min(100, Math.max(1, Math.round(Number(input.level))));
@@ -120,7 +154,18 @@ export async function updatePokemonHomeAction(id: string, input: UpdatePokemonIn
 
   revalidatePath('/pokemons');
   revalidatePath(`/pokemons/${existing.gameId}`);
+  revalidatePath(`/pokemons/${effectiveGameId}`);
+  const allTouchedGames = new Set([
+    ...(existing.extraGameIds || []),
+    ...(updated.extraGameIds || []),
+  ]);
+  for (const gid of allTouchedGames) {
+    revalidatePath(`/pokemons/${gid}`);
+  }
   revalidatePath(`/jogos/${existing.gameId}/living-dex`);
+  if (effectiveGameId !== existing.gameId) {
+    revalidatePath(`/jogos/${effectiveGameId}/living-dex`);
+  }
 
   return { ok: true, pokemon: updated };
 }
@@ -140,6 +185,9 @@ export async function deletePokemonHomeAction(id: string) {
 
   revalidatePath('/pokemons');
   revalidatePath(`/pokemons/${existing.gameId}`);
+  for (const extraId of existing.extraGameIds || []) {
+    revalidatePath(`/pokemons/${extraId}`);
+  }
   revalidatePath(`/jogos/${existing.gameId}/living-dex`);
 
   return { ok: true };

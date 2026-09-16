@@ -15,6 +15,7 @@ export async function createOwnedPokemon(formData: FormData) {
   const fakeSpeciesId = String(formData.get('fakeSpeciesId') ?? '').trim() || null;
   const level = Number(formData.get('level')) || 1;
   const nickname = String(formData.get('nickname') ?? '').trim() || null;
+  const trainerName = String(formData.get('trainerName') ?? '').trim() || null;
   const isShiny = formData.get('isShiny') === 'on';
   const sprite = formData.get('sprite');
 
@@ -81,6 +82,7 @@ export async function createOwnedPokemon(formData: FormData) {
         fakeSpeciesId,
         level,
         nickname,
+        trainerName,
         isShiny,
         spriteVariant,
       },
@@ -158,6 +160,7 @@ export async function updateOwnedPokemon(
   gameId: string,
   data: {
     nickname?: string | null;
+    trainerName?: string | null;
     level?: number;
     isShiny?: boolean;
   },
@@ -166,6 +169,7 @@ export async function updateOwnedPokemon(
 
   const updateData: {
     nickname?: string | null;
+    trainerName?: string | null;
     level?: number;
     isShiny?: boolean;
     spriteVariant?: string;
@@ -173,6 +177,9 @@ export async function updateOwnedPokemon(
 
   if (data.nickname !== undefined) {
     updateData.nickname = data.nickname?.trim() || null;
+  }
+  if (data.trainerName !== undefined) {
+    updateData.trainerName = data.trainerName?.trim() || null;
   }
   if (data.level !== undefined) {
     updateData.level = Math.min(100, Math.max(1, Math.round(Number(data.level))));

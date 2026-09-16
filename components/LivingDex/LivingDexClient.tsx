@@ -21,6 +21,7 @@ interface Owned {
   pokemonId: number;
   name: string;
   nickname: string | null;
+  trainerName?: string | null;
   level: number;
   boxNumber: number;
   boxSlot: number;

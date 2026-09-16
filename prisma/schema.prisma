@@ -212,10 +212,12 @@ model OwnedPokemon {
   id             String       @id @default(cuid())
   gameId         String
   game           Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  extraGameIds   String[]     @default([])
   pokemonId      Int // id da PokeAPI
   fakeSpeciesId  String?
   fakeSpecies    FakeSpecies? @relation(fields: [fakeSpeciesId], references: [id], onDelete: SetNull)
   nickname       String?
+  trainerName    String?
   caughtLocation String?
   level          Int
   isShiny        Boolean      @default(false)
